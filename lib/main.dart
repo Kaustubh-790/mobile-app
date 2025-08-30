@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'src/providers/auth_provider.dart';
+import 'src/providers/services_provider.dart';
 import 'src/screens/auth/login_screen.dart';
 import 'src/screens/home/home_screen.dart';
+import 'src/screens/service/service_detail_screen.dart';
 import 'src/config/firebase_config.dart';
 
 void main() async {
@@ -30,8 +32,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => authProvider,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: authProvider),
+        ChangeNotifierProvider(create: (_) => ServicesProvider()),
+      ],
       child: MaterialApp(
         title: 'User App',
         theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
@@ -39,6 +44,8 @@ class MyApp extends StatelessWidget {
         routes: {
           '/login': (context) => const LoginScreen(),
           '/home': (context) => const HomeScreen(),
+          '/service-detail': (context) =>
+              const ServiceDetailScreen(serviceSlug: ''),
         },
       ),
     );

@@ -54,7 +54,7 @@ class ApiClient {
     print('ApiClient: Auth token cleared');
   }
 
-  /// Gets the current Dio instance
+  /// Gets the current Dio instancer
   Dio get instance => dio;
 
   /// Test the connection to the server
