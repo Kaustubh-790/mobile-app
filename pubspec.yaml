@@ -14,6 +14,16 @@ dependencies:
   provider: ^6.1.1
   shared_preferences: ^2.2.2
 
+  # Firebase dependencies
+  firebase_core: ^2.24.0
+  firebase_auth: ^4.15.0
+
+  # Google Sign-In
+  google_sign_in: ^6.1.5
+
+  # Platform-specific dependencies
+  crypto: ^3.0.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

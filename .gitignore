@@ -135,3 +135,19 @@ Thumbs.db
 
 # Dependency directories
 pubspec.lock
+
+# Firebase Configuration Files
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/src/config/firebase_config.dart
+
+# Environment Files
+.env
+.env.local
+.env.production
+.env.staging
+
+# Firebase Local Emulator
+.firebase/
+firebase-debug.log
+firebase-debug.*.log

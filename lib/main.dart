@@ -3,9 +3,19 @@ import 'package:provider/provider.dart';
 import 'src/providers/auth_provider.dart';
 import 'src/screens/auth/login_screen.dart';
 import 'src/screens/home/home_screen.dart';
+import 'src/config/firebase_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  try {
+    await FirebaseConfig.initialize();
+    print('Firebase initialized successfully');
+  } catch (e) {
+    print('Failed to initialize Firebase: $e');
+    // Continue without Firebase for now
+  }
 
   final authProvider = AuthProvider();
   await authProvider.initialize();
