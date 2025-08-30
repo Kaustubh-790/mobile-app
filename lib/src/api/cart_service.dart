@@ -290,7 +290,7 @@ class CartService {
     try {
       print('CartService: Removing item from cart - itemId: $itemId');
 
-      final response = await _apiClient.instance.delete('/cart/$itemId');
+      final response = await _apiClient.instance.delete('/cart/remove/$itemId');
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         print('CartService: Successfully removed item from cart');
