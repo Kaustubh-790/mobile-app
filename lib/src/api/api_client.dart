@@ -38,6 +38,7 @@ class ApiClient {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
+        'X-Auth-Type': 'user',
       },
     );
   }
