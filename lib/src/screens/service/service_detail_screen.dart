@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../api/api_client.dart';
 import '../../models/service_model.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class ServiceDetailScreen extends StatefulWidget {
   final String serviceSlug;
@@ -504,8 +505,38 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
           package['_id']?.toString() ?? package['id']?.toString() ?? '';
       final int selectedQuantity = _getPackageQuantity(packageId);
 
+      // Extract package details
+      final String packageName =
+          package['name']?.toString() ??
+          package['packageName']?.toString() ??
+          'Package';
+      final String duration =
+          package['duration']?.toString() ??
+          package['packageDuration']?.toString() ??
+          '';
+      final double price = package['price'] is num
+          ? (package['price'] as num).toDouble()
+          : package['price'] is String
+          ? double.tryParse(package['price'] as String) ?? 0.0
+          : 0.0;
+
+      print('ServiceDetailScreen: Extracted price from package: $price');
+      print('ServiceDetailScreen: Package data: $package');
+
       if (serviceId.isNotEmpty) {
-        cartProvider.addItem(serviceId, selectedQuantity);
+        // Get current user ID from auth provider
+        final currentUser = context.read<AuthProvider>().currentUser;
+        final userId = currentUser?.id;
+
+        cartProvider.addItemWithDetails(
+          serviceId,
+          selectedQuantity,
+          packageId: packageId,
+          packageName: packageName,
+          duration: duration,
+          price: price,
+          userId: userId,
+        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -2,6 +2,8 @@ class CartItem {
   final String id;
   final String serviceId;
   final String? packageId;
+  final String? packageName;
+  final String? duration;
   final int quantity;
   final Map<String, dynamic>? customizations;
   final double price;
@@ -11,6 +13,8 @@ class CartItem {
     required this.id,
     required this.serviceId,
     this.packageId,
+    this.packageName,
+    this.duration,
     required this.quantity,
     this.customizations,
     required this.price,
@@ -35,6 +39,18 @@ class CartItem {
       final String? packageId =
           json['packageId']?.toString() ?? json['package_id']?.toString();
 
+      // Handle packageName (optional)
+      final String? packageName =
+          json['packageName']?.toString() ??
+          json['package_name']?.toString() ??
+          json['name']?.toString();
+
+      // Handle duration (optional)
+      final String? duration =
+          json['duration']?.toString() ??
+          json['packageDuration']?.toString() ??
+          json['package_duration']?.toString();
+
       // Handle quantity with validation
       final int quantity = json['quantity'] is int
           ? json['quantity'] as int
@@ -49,11 +65,16 @@ class CartItem {
           : null;
 
       // Handle price with validation
+      print('CartItem.fromJson: Raw price value: ${json['price']}');
+      print('CartItem.fromJson: Raw price type: ${json['price']?.runtimeType}');
+
       final double price = json['price'] is num
           ? (json['price'] as num).toDouble()
           : json['price'] is String
           ? double.tryParse(json['price'] as String) ?? 0.0
           : 0.0;
+
+      print('CartItem.fromJson: Parsed price: $price');
 
       // Handle addedAt with fallback
       final String addedAt =
@@ -65,6 +86,8 @@ class CartItem {
         id: id,
         serviceId: serviceId,
         packageId: packageId,
+        packageName: packageName,
+        duration: duration,
         quantity: quantity,
         customizations: customizations,
         price: price,
@@ -82,6 +105,8 @@ class CartItem {
       '_id': id,
       'serviceId': serviceId,
       if (packageId != null) 'packageId': packageId,
+      if (packageName != null) 'packageName': packageName,
+      if (duration != null) 'duration': duration,
       'quantity': quantity,
       if (customizations != null) 'customizations': customizations,
       'price': price,
@@ -93,6 +118,8 @@ class CartItem {
     String? id,
     String? serviceId,
     String? packageId,
+    String? packageName,
+    String? duration,
     int? quantity,
     Map<String, dynamic>? customizations,
     double? price,
@@ -102,6 +129,8 @@ class CartItem {
       id: id ?? this.id,
       serviceId: serviceId ?? this.serviceId,
       packageId: packageId ?? this.packageId,
+      packageName: packageName ?? this.packageName,
+      duration: duration ?? this.duration,
       quantity: quantity ?? this.quantity,
       customizations: customizations ?? this.customizations,
       price: price ?? this.price,
@@ -116,6 +145,8 @@ class CartItem {
         other.id == id &&
         other.serviceId == serviceId &&
         other.packageId == packageId &&
+        other.packageName == packageName &&
+        other.duration == duration &&
         other.quantity == quantity &&
         other.customizations == customizations &&
         other.price == price &&
@@ -127,6 +158,8 @@ class CartItem {
     return id.hashCode ^
         serviceId.hashCode ^
         packageId.hashCode ^
+        (packageName?.hashCode ?? 0) ^
+        (duration?.hashCode ?? 0) ^
         quantity.hashCode ^
         customizations.hashCode ^
         price.hashCode ^
@@ -135,6 +168,6 @@ class CartItem {
 
   @override
   String toString() {
-    return 'CartItem(id: $id, serviceId: $serviceId, packageId: $packageId, quantity: $quantity, customizations: $customizations, price: $price, addedAt: $addedAt)';
+    return 'CartItem(id: $id, serviceId: $serviceId, packageId: $packageId, packageName: $packageName, duration: $duration, quantity: $quantity, customizations: $customizations, price: $price, addedAt: $addedAt)';
   }
 }

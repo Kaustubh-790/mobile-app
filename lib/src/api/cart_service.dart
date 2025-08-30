@@ -6,7 +6,7 @@ class CartService {
   static final ApiClient _apiClient = ApiClient();
 
   /// Get user's cart
-  static Future<List<CartItem>> getCart() async {
+  static Future<List<CartItem>> getCart({String? userId}) async {
     try {
       print('CartService: Fetching cart...');
 
@@ -20,13 +20,10 @@ class CartService {
         List<dynamic> itemsData = [];
 
         if (cartData['items'] != null) {
-          // Standard cart response with items array
           itemsData = cartData['items'] as List<dynamic>;
         } else if (cartData is List) {
-          // Direct list of cart items
           itemsData = cartData as List<dynamic>;
         } else if (cartData['cartItems'] != null) {
-          // Alternative response structure
           itemsData = cartData['cartItems'] as List<dynamic>;
         }
 
@@ -77,39 +74,77 @@ class CartService {
     }
   }
 
-  /// Add item to cart
-  static Future<CartItem> addToCart(String serviceId, int quantity) async {
+  /// Add item to cart - Updated to send packageId to backend
+  static Future<CartItem> addToCart(
+    String serviceId,
+    int quantity, {
+    String? packageId, // Now required for backend to calculate correct price
+    String? userId,
+    double? price,
+    Map<String, dynamic>? customizations,
+  }) async {
     try {
       print(
-        'CartService: Adding item to cart - serviceId: $serviceId, quantity: $quantity',
+        'CartService: Adding item to cart - serviceId: $serviceId, packageId: $packageId, quantity: $quantity, price: $price',
       );
+
+      // Prepare request data matching backend expectations
+      final requestData = <String, dynamic>{
+        'serviceId': serviceId,
+        'quantity': quantity,
+      };
+
+      // Add packageId if provided - this is what backend uses to calculate price
+      if (packageId != null && packageId.isNotEmpty) {
+        requestData['packageId'] = packageId;
+      }
+
+      // Add customizations if provided
+      if (customizations != null && customizations.isNotEmpty) {
+        requestData['customizations'] = customizations;
+      }
+
+      print('CartService: Request data: $requestData');
+      print('CartService: Using endpoint: /cart/add');
 
       final response = await _apiClient.instance.post(
         '/cart/add',
-        data: {'serviceId': serviceId, 'quantity': quantity},
+        data: requestData,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseData = response.data;
         print('CartService: Add to cart response: $responseData');
 
-        // Handle different response structures
-        Map<String, dynamic> cartItemData;
-
-        if (responseData['cartItem'] != null) {
-          cartItemData = responseData['cartItem'] as Map<String, dynamic>;
-        } else if (responseData['item'] != null) {
-          cartItemData = responseData['item'] as Map<String, dynamic>;
-        } else if (responseData['data'] != null) {
-          cartItemData = responseData['data'] as Map<String, dynamic>;
-        } else {
-          // Assume the response is the cart item itself
-          cartItemData = responseData;
+        // Backend returns the entire cart, extract the added item
+        List<dynamic> items = [];
+        if (responseData['items'] != null) {
+          items = responseData['items'] as List<dynamic>;
         }
 
-        // Create a mock CartItem if the response doesn't contain all required fields
+        if (items.isEmpty) {
+          throw Exception('No items found in cart response');
+        }
+
+        // Find the item that was just added (last item or matching serviceId/packageId)
+        Map<String, dynamic> cartItemData;
+        if (packageId != null) {
+          // Find item with matching serviceId and packageId
+          final matchingItem = items.cast<Map<String, dynamic>>().firstWhere(
+            (item) =>
+                item['serviceId'] == serviceId &&
+                (item['packageId']?.toString() == packageId ||
+                    item['packageId']?['_id']?.toString() == packageId),
+            orElse: () => items.last as Map<String, dynamic>,
+          );
+          cartItemData = matchingItem;
+        } else {
+          // If no packageId, get the last added item
+          cartItemData = items.last as Map<String, dynamic>;
+        }
+
+        // Ensure required fields exist
         if (cartItemData['_id'] == null && cartItemData['id'] == null) {
-          // Generate a temporary ID for the new item
           cartItemData['_id'] = 'temp_${DateTime.now().millisecondsSinceEpoch}';
         }
 
@@ -117,8 +152,12 @@ class CartService {
           cartItemData['addedAt'] = DateTime.now().toIso8601String();
         }
 
+        print('CartService: Final cart item data: $cartItemData');
+
         final CartItem cartItem = CartItem.fromJson(cartItemData);
-        print('CartService: Successfully added item to cart');
+        print(
+          'CartService: Successfully created CartItem with price: ${cartItem.price}',
+        );
         return cartItem;
       } else {
         print(
@@ -153,37 +192,64 @@ class CartService {
     }
   }
 
+  /// Convenience method for adding items with package details
+  static Future<CartItem> addItemWithPackage(
+    String serviceId,
+    int quantity, {
+    required String packageId,
+    String? userId,
+    Map<String, dynamic>? customizations,
+  }) async {
+    return addToCart(
+      serviceId,
+      quantity,
+      packageId: packageId,
+      userId: userId,
+      customizations: customizations,
+    );
+  }
+
   /// Update cart item quantity
-  static Future<CartItem> updateCartItem(String itemId, int quantity) async {
+  static Future<CartItem> updateCartItem(
+    String itemId,
+    int quantity, {
+    String? userId,
+    double? price,
+  }) async {
     try {
       print(
         'CartService: Updating cart item - itemId: $itemId, quantity: $quantity',
       );
 
+      final requestData = {
+        'quantity': quantity,
+        if (price != null) 'price': price,
+      };
+
       final response = await _apiClient.instance.put(
         '/cart/update/$itemId',
-        data: {'quantity': quantity},
+        data: requestData,
       );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = response.data;
         print('CartService: Update cart item response: $responseData');
 
-        // Handle different response structures
-        Map<String, dynamic> cartItemData;
-
-        if (responseData['cartItem'] != null) {
-          cartItemData = responseData['cartItem'] as Map<String, dynamic>;
-        } else if (responseData['item'] != null) {
-          cartItemData = responseData['item'] as Map<String, dynamic>;
-        } else if (responseData['data'] != null) {
-          cartItemData = responseData['data'] as Map<String, dynamic>;
-        } else {
-          // Assume the response is the cart item itself
-          cartItemData = responseData;
+        // Backend returns entire cart, find the updated item
+        List<dynamic> items = [];
+        if (responseData['items'] != null) {
+          items = responseData['items'] as List<dynamic>;
         }
 
-        final CartItem cartItem = CartItem.fromJson(cartItemData);
+        // Find the updated item
+        final updatedItemData = items.cast<Map<String, dynamic>>().firstWhere(
+          (item) =>
+              item['_id']?.toString() == itemId ||
+              item['id']?.toString() == itemId,
+          orElse: () => responseData,
+        );
+
+        final CartItem cartItem = CartItem.fromJson(updatedItemData);
         print('CartService: Successfully updated cart item');
         return cartItem;
       } else {
@@ -220,7 +286,7 @@ class CartService {
   }
 
   /// Remove item from cart
-  static Future<void> removeFromCart(String itemId) async {
+  static Future<void> removeFromCart(String itemId, {String? userId}) async {
     try {
       print('CartService: Removing item from cart - itemId: $itemId');
 
@@ -263,7 +329,7 @@ class CartService {
   }
 
   /// Clear entire cart
-  static Future<void> clearCart() async {
+  static Future<void> clearCart({String? userId}) async {
     try {
       print('CartService: Clearing cart...');
 

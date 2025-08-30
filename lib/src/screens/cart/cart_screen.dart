@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../models/cart_item.dart';
+import '../../providers/auth_provider.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -16,7 +17,9 @@ class _CartScreenState extends State<CartScreen> {
     super.initState();
     // Fetch cart data when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CartProvider>().fetchCart();
+      final currentUser = context.read<AuthProvider>().currentUser;
+      final userId = currentUser?.id;
+      context.read<CartProvider>().fetchCart(userId: userId);
     });
   }
 
@@ -69,7 +72,13 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => cartProvider.fetchCart(),
+                    onPressed: () {
+                      final currentUser = context
+                          .read<AuthProvider>()
+                          .currentUser;
+                      final userId = currentUser?.id;
+                      cartProvider.fetchCart(userId: userId);
+                    },
                     child: const Text('Retry'),
                   ),
                 ],
@@ -153,10 +162,19 @@ class _CartScreenState extends State<CartScreen> {
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                      if (item.packageId != null) ...[
+                      if (item.packageName != null) ...[
                         const SizedBox(height: 4),
                         Text(
-                          'Package: ${item.packageId}',
+                          'Package: ${item.packageName}',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Colors.grey[600]),
+                        ),
+                      ],
+                      if (item.duration != null &&
+                          item.duration!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Duration: ${item.duration}',
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: Colors.grey[600]),
                         ),
@@ -177,7 +195,7 @@ class _CartScreenState extends State<CartScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    '\$${item.price.toStringAsFixed(2)}',
+                    '₹ ${item.price.toStringAsFixed(2)}',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.bold,
@@ -189,7 +207,7 @@ class _CartScreenState extends State<CartScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Total: \$${(item.price * item.quantity).toStringAsFixed(2)}',
+              'Total: ₹ ${(item.price * item.quantity).toStringAsFixed(2)}',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
@@ -211,7 +229,16 @@ class _CartScreenState extends State<CartScreen> {
         IconButton(
           icon: const Icon(Icons.remove_circle_outline),
           onPressed: item.quantity > 1
-              ? () => cartProvider.updateItem(item.id, item.quantity - 1)
+              ? () {
+                  final currentUser = context.read<AuthProvider>().currentUser;
+                  final userId = currentUser?.id;
+                  cartProvider.updateItem(
+                    item.id,
+                    item.quantity - 1,
+                    userId: userId,
+                    price: item.price,
+                  );
+                }
               : null,
           color: item.quantity > 1
               ? Theme.of(context).colorScheme.primary
@@ -232,7 +259,16 @@ class _CartScreenState extends State<CartScreen> {
         ),
         IconButton(
           icon: const Icon(Icons.add_circle_outline),
-          onPressed: () => cartProvider.updateItem(item.id, item.quantity + 1),
+          onPressed: () {
+            final currentUser = context.read<AuthProvider>().currentUser;
+            final userId = currentUser?.id;
+            cartProvider.updateItem(
+              item.id,
+              item.quantity + 1,
+              userId: userId,
+              price: item.price,
+            );
+          },
           color: Theme.of(context).colorScheme.primary,
         ),
       ],
@@ -266,7 +302,7 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                 ),
                 Text(
-                  '\$${cartProvider.totalPrice.toStringAsFixed(2)}',
+                  '₹ ${cartProvider.totalPrice.toStringAsFixed(2)}',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.bold,
@@ -304,8 +340,10 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   String _getServiceDisplayName(CartItem item) {
-    // For now, using serviceId as display name
-    // In a real app, you might want to fetch service details or pass them from the service screen
+    // Use serviceId as display name, but format it nicely
+    if (item.serviceId == 'labour') {
+      return 'LABOUR';
+    }
     return item.serviceId.replaceAll('_', ' ').toUpperCase();
   }
 
@@ -330,7 +368,10 @@ class _CartScreenState extends State<CartScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                cartProvider.removeItem(item.id);
+                // Get current user ID from auth provider
+                final currentUser = context.read<AuthProvider>().currentUser;
+                final userId = currentUser?.id;
+                cartProvider.removeItem(item.id, userId: userId);
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Remove'),
@@ -358,7 +399,10 @@ class _CartScreenState extends State<CartScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                cartProvider.clearCart();
+                // Get current user ID from auth provider
+                final currentUser = context.read<AuthProvider>().currentUser;
+                final userId = currentUser?.id;
+                cartProvider.clearCart(userId: userId);
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Clear Cart'),
