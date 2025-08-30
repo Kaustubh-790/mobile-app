@@ -6,6 +6,7 @@ import '../../providers/services_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../widgets/popular_services_section.dart';
 import '../cart/cart_screen.dart';
+import '../settings/contact_us.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -62,6 +63,19 @@ class HomeScreen extends StatelessWidget {
                 ],
               );
             },
+          ),
+          // Temporary Contact Us button for testing
+          IconButton(
+            icon: const Icon(Icons.contact_support),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ContactUsScreen(),
+                ),
+              );
+            },
+            tooltip: 'Contact Us (Test)',
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -228,6 +242,26 @@ class HomeScreen extends StatelessWidget {
                         Expanded(
                           child: _buildQuickActionCard(
                             context,
+                            icon: Icons.contact_support,
+                            title: 'Contact Us',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ContactUsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildQuickActionCard(
+                            context,
                             icon: Icons.person,
                             title: 'Profile',
                             onTap: () {
@@ -239,6 +273,10 @@ class HomeScreen extends StatelessWidget {
                               );
                             },
                           ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(), // Empty space to maintain layout
                         ),
                       ],
                     ),

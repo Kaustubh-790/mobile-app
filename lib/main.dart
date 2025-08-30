@@ -6,6 +6,7 @@ import 'src/providers/cart_provider.dart';
 import 'src/screens/auth/login_screen.dart';
 import 'src/screens/home/home_screen.dart';
 import 'src/screens/service/service_detail_screen.dart';
+import 'src/screens/settings/contact_us.dart';
 import 'src/config/firebase_config.dart';
 
 void main() async {
@@ -48,6 +49,7 @@ class MyApp extends StatelessWidget {
           '/home': (context) => const HomeScreen(),
           '/service-detail': (context) =>
               const ServiceDetailScreen(serviceSlug: ''),
+          '/contact-us': (context) => const ContactUsScreen(),
         },
       ),
     );
