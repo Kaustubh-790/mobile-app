@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../api/api_client.dart';
 import '../../models/service_model.dart';
+import '../../providers/cart_provider.dart';
 
 class ServiceDetailScreen extends StatefulWidget {
   final String serviceSlug;
@@ -16,6 +18,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   List<dynamic> packages = [];
   bool isLoading = true;
   String? errorMessage;
+  Map<String, int> packageQuantities = {}; // Track quantity for each package
 
   @override
   void initState() {
@@ -121,6 +124,20 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       }
     }
     return 0;
+  }
+
+  /// Get quantity for a specific package
+  int _getPackageQuantity(String packageId) {
+    return packageQuantities[packageId] ?? 1;
+  }
+
+  /// Update quantity for a specific package
+  void _updatePackageQuantity(String packageId, int newQuantity) {
+    if (newQuantity >= 1 && newQuantity <= 10) {
+      setState(() {
+        packageQuantities[packageId] = newQuantity;
+      });
+    }
   }
 
   @override
@@ -353,6 +370,47 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                 ),
               ),
             ),
+
+            const SizedBox(height: 12),
+
+            // Quantity Selector
+            Row(
+              children: [
+                const Text(
+                  'Quantity: ',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const Spacer(),
+                _buildQuantitySelector(package),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Add to Cart Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _addToCart(package),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[600],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 2,
+                ),
+                child: const Text(
+                  'Add to Cart',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -387,5 +445,92 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildQuantitySelector(dynamic package) {
+    final String packageId =
+        package['_id']?.toString() ?? package['id']?.toString() ?? '';
+    final int currentQuantity = _getPackageQuantity(packageId);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Decrease button
+        IconButton(
+          icon: const Icon(Icons.remove_circle_outline),
+          onPressed: currentQuantity > 1
+              ? () => _updatePackageQuantity(packageId, currentQuantity - 1)
+              : null,
+          color: currentQuantity > 1 ? Colors.red[600] : Colors.grey[400],
+          iconSize: 24,
+        ),
+
+        // Quantity display
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white,
+          ),
+          child: Text(
+            '$currentQuantity',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+
+        // Increase button
+        IconButton(
+          icon: const Icon(Icons.add_circle_outline),
+          onPressed: currentQuantity < 10
+              ? () => _updatePackageQuantity(packageId, currentQuantity + 1)
+              : null,
+          color: currentQuantity < 10 ? Colors.green[600] : Colors.grey[400],
+          iconSize: 24,
+        ),
+      ],
+    );
+  }
+
+  void _addToCart(dynamic package) {
+    try {
+      final cartProvider = context.read<CartProvider>();
+      final serviceId = package['serviceId']?.toString() ?? '';
+      final String packageId =
+          package['_id']?.toString() ?? package['id']?.toString() ?? '';
+      final int selectedQuantity = _getPackageQuantity(packageId);
+
+      if (serviceId.isNotEmpty) {
+        cartProvider.addItem(serviceId, selectedQuantity);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Added $selectedQuantity item(s) to cart'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: Service ID not found'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error adding to cart: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }
