@@ -3,6 +3,7 @@ import '../../../models/booking.dart';
 import '../../../utils/date_formatter.dart';
 import '../../../utils/status_utils.dart';
 import 'service_details_section.dart';
+import 'cancel_booking_modal.dart';
 
 class BookingCard extends StatefulWidget {
   final Booking booking;
@@ -249,13 +250,16 @@ class _BookingCardState extends State<BookingCard>
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            // TODO: Navigate to payment screen
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Payment functionality coming soon!',
-                                ),
-                              ),
+                            // Navigate to payment screen
+                            Navigator.pushNamed(
+                              context,
+                              '/payment',
+                              arguments: {
+                                'bookingId': widget.booking.id,
+                                'cartId': widget.booking.cartId,
+                                'amount': widget.booking.totalAmount,
+                                'fromBookings': true,
+                              },
                             );
                           },
                           style: ElevatedButton.styleFrom(
@@ -274,12 +278,11 @@ class _BookingCardState extends State<BookingCard>
                     if (canCancel)
                       ElevatedButton.icon(
                         onPressed: () {
-                          // TODO: Show cancel modal
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Cancel functionality coming soon!',
-                              ),
+                          showDialog(
+                            context: context,
+                            builder: (context) => CancelBookingModal(
+                              booking: widget.booking,
+                              onCancelled: widget.onRefresh,
                             ),
                           );
                         },

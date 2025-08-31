@@ -423,39 +423,37 @@ class BookingService {
     }
   }
 
-  /// Reschedule a booking
-  static Future<Booking> rescheduleBooking(
+  /// Cancel a booking with reason and message
+  static Future<bool> cancelBookingWithReason(
     String bookingId,
-    DateTime newDate,
-    String newTime,
+    String reason,
+    String? message,
   ) async {
     try {
-      print('BookingService: Rescheduling booking: $bookingId');
+      print(
+        'BookingService: Cancelling booking: $bookingId with reason: $reason',
+      );
 
-      final response = await _apiClient.instance.put(
-        '/bookings/$bookingId/status',
+      final response = await _apiClient.instance.delete(
+        '/bookings/$bookingId',
         data: {
-          'scheduledDate': newDate.toIso8601String(),
-          'scheduledTime': newTime,
+          'reason': reason,
+          if (message != null && message.isNotEmpty) 'message': message,
         },
         options: Options(headers: {'X-Auth-Type': 'user'}),
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> bookingData = response.data;
-        print('BookingService: Raw reschedule response: $bookingData');
-
-        final booking = Booking.fromJson(bookingData);
-        print('BookingService: Successfully rescheduled booking');
-        return booking;
+        print('BookingService: Successfully cancelled booking');
+        return true;
       } else {
         print(
-          'BookingService: Error rescheduling booking - Status: ${response.statusCode}',
+          'BookingService: Error cancelling booking - Status: ${response.statusCode}',
         );
-        throw Exception('Failed to reschedule booking');
+        throw Exception('Failed to cancel booking');
       }
     } catch (e) {
-      print('BookingService: Exception while rescheduling booking - $e');
+      print('BookingService: Exception while cancelling booking - $e');
 
       if (e is DioException) {
         print('BookingService: DioException type: ${e.type}');
@@ -473,7 +471,14 @@ class BookingService {
               'Unable to connect to server. Please try again later.',
             );
           case DioExceptionType.badResponse:
-            if (e.response?.statusCode == 401) {
+            if (e.response?.statusCode == 400) {
+              final errorData = e.response?.data;
+              if (errorData is Map<String, dynamic> &&
+                  errorData['message'] != null) {
+                throw Exception(errorData['message']);
+              }
+              throw Exception('Invalid cancellation data');
+            } else if (e.response?.statusCode == 401) {
               throw Exception('Authentication required. Please log in again.');
             } else if (e.response?.statusCode == 404) {
               throw Exception('Booking not found.');
@@ -484,7 +489,146 @@ class BookingService {
         }
       }
 
-      throw Exception('Failed to reschedule booking: $e');
+      throw Exception('Failed to cancel booking: $e');
+    }
+  }
+
+  /// Rate a service
+  static Future<bool> rateService(
+    String bookingId,
+    int serviceIndex,
+    double rating,
+    String? review,
+  ) async {
+    try {
+      print(
+        'BookingService: Rating service: $bookingId, index: $serviceIndex, rating: $rating',
+      );
+
+      final response = await _apiClient.instance.post(
+        '/bookings/$bookingId/services/$serviceIndex/rate',
+        data: {
+          'rating': rating,
+          if (review != null && review.isNotEmpty) 'review': review,
+        },
+        options: Options(headers: {'X-Auth-Type': 'user'}),
+      );
+
+      if (response.statusCode == 200) {
+        print('BookingService: Successfully rated service');
+        return true;
+      } else {
+        print(
+          'BookingService: Error rating service - Status: ${response.statusCode}',
+        );
+        throw Exception('Failed to rate service');
+      }
+    } catch (e) {
+      print('BookingService: Exception while rating service - $e');
+
+      if (e is DioException) {
+        print('BookingService: DioException type: ${e.type}');
+        print('BookingService: DioException message: ${e.message}');
+
+        switch (e.type) {
+          case DioExceptionType.connectionTimeout:
+          case DioExceptionType.receiveTimeout:
+          case DioExceptionType.sendTimeout:
+            throw Exception(
+              'Connection timeout. Please check your internet connection.',
+            );
+          case DioExceptionType.connectionError:
+            throw Exception(
+              'Unable to connect to server. Please try again later.',
+            );
+          case DioExceptionType.badResponse:
+            if (e.response?.statusCode == 400) {
+              final errorData = e.response?.data;
+              if (errorData is Map<String, dynamic> &&
+                  errorData['message'] != null) {
+                throw Exception(errorData['message']);
+              }
+              throw Exception('Invalid rating data');
+            } else if (e.response?.statusCode == 401) {
+              throw Exception('Authentication required. Please log in again.');
+            } else if (e.response?.statusCode == 404) {
+              throw Exception('Booking or service not found.');
+            }
+            break;
+          default:
+            throw Exception('Network error occurred. Please try again.');
+        }
+      }
+
+      throw Exception('Failed to rate service: $e');
+    }
+  }
+
+  /// Reschedule a service
+  static Future<bool> rescheduleService(
+    String bookingId,
+    int serviceIndex,
+    DateTime newDate,
+    String newTime,
+  ) async {
+    try {
+      print(
+        'BookingService: Rescheduling service: $bookingId, index: $serviceIndex',
+      );
+
+      final response = await _apiClient.instance.post(
+        '/bookings/$bookingId/services/$serviceIndex/reschedule',
+        data: {'newDate': newDate.toIso8601String(), 'newTime': newTime},
+        options: Options(headers: {'X-Auth-Type': 'user'}),
+      );
+
+      if (response.statusCode == 200) {
+        print('BookingService: Successfully rescheduled service');
+        return true;
+      } else {
+        print(
+          'BookingService: Error rescheduling service - Status: ${response.statusCode}',
+        );
+        throw Exception('Failed to reschedule service');
+      }
+    } catch (e) {
+      print('BookingService: Exception while rescheduling service - $e');
+
+      if (e is DioException) {
+        print('BookingService: DioException type: ${e.type}');
+        print('BookingService: DioException message: ${e.message}');
+
+        switch (e.type) {
+          case DioExceptionType.connectionTimeout:
+          case DioExceptionType.receiveTimeout:
+          case DioExceptionType.sendTimeout:
+            throw Exception(
+              'Connection timeout. Please check your internet connection.',
+            );
+          case DioExceptionType.connectionError:
+            throw Exception(
+              'Unable to connect to server. Please try again later.',
+            );
+          case DioExceptionType.badResponse:
+            if (e.response?.statusCode == 400) {
+              final errorData = e.response?.data;
+              if (errorData is Map<String, dynamic> &&
+                  errorData['message'] != null) {
+                throw Exception(errorData['message']);
+              }
+              throw Exception('Invalid reschedule data');
+            } else if (e.response?.statusCode == 401) {
+              throw Exception('Authentication required. Please log in again.');
+            } else if (e.response?.statusCode == 404) {
+              throw Exception('Booking or service not found.');
+            }
+            break;
+          default:
+            throw Exception('Network error occurred. Please try again.');
+        }
+      }
+
+      throw Exception('Failed to reschedule service: $e');
     }
   }
 
@@ -548,6 +692,58 @@ class BookingService {
       }
 
       throw Exception('Failed to update payment status: $e');
+    }
+  }
+
+  /// Get cancellation details for a booking
+  static Future<Map<String, dynamic>> getCancellationDetails(
+    String bookingId,
+  ) async {
+    try {
+      print(
+        'BookingService: Getting cancellation details for booking: $bookingId',
+      );
+
+      // Since the backend doesn't have a specific endpoint for this,
+      // we'll calculate it based on the booking data
+      final booking = await getBookingById(bookingId);
+
+      final now = DateTime.now();
+      final bookingDateTime = DateTime(
+        booking.bookingDate.year,
+        booking.bookingDate.month,
+        booking.bookingDate.day,
+      );
+
+      final timeToBooking = bookingDateTime.difference(now).inHours;
+      final isSameDay =
+          now.year == bookingDateTime.year &&
+          now.month == bookingDateTime.month &&
+          now.day == bookingDateTime.day;
+
+      bool isFreeCancellation;
+      String type;
+
+      if (isSameDay) {
+        type = 'same-day';
+        // Free cancellation within 15 minutes of booking
+        final timeSinceBooking = now.difference(booking.createdAt).inMinutes;
+        isFreeCancellation = timeSinceBooking <= 15;
+      } else {
+        type = 'future';
+        isFreeCancellation = timeToBooking > 3;
+      }
+
+      return {
+        'type': type,
+        'isFreeCancellation': isFreeCancellation,
+        'feeAmount': booking.cancellationFee ?? 200.0,
+      };
+    } catch (e) {
+      print(
+        'BookingService: Exception while getting cancellation details - $e',
+      );
+      throw Exception('Failed to get cancellation details: $e');
     }
   }
 }

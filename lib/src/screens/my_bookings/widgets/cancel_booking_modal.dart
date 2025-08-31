@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../models/booking.dart';
+import '../../../providers/booking_provider.dart';
 
 class CancelBookingModal extends StatefulWidget {
   final Booking booking;
@@ -47,10 +49,17 @@ class _CancelBookingModalState extends State<CancelBookingModal> {
     });
 
     try {
-      // TODO: Implement API call to get cancellation details
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
+      final details = await context
+          .read<BookingProvider>()
+          .getCancellationDetails(widget.booking.id!);
 
-      // Calculate cancellation details based on booking
+      if (mounted) {
+        setState(() {
+          _cancellationDetails = details;
+        });
+      }
+    } catch (e) {
+      // Handle error - use fallback calculation
       final now = DateTime.now();
       final bookingDateTime = DateTime(
         widget.booking.bookingDate.year,
@@ -79,19 +88,21 @@ class _CancelBookingModalState extends State<CancelBookingModal> {
         isFreeCancellation = timeToBooking > 3;
       }
 
-      setState(() {
-        _cancellationDetails = {
-          'type': type,
-          'isFreeCancellation': isFreeCancellation,
-          'feeAmount': widget.booking.cancellationFee ?? 0.0,
-        };
-      });
-    } catch (e) {
-      // Handle error
+      if (mounted) {
+        setState(() {
+          _cancellationDetails = {
+            'type': type,
+            'isFreeCancellation': isFreeCancellation,
+            'feeAmount': widget.booking.cancellationFee ?? 200.0,
+          };
+        });
+      }
     } finally {
-      setState(() {
-        _isLoadingCancellationDetails = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingCancellationDetails = false;
+        });
+      }
     }
   }
 
@@ -111,10 +122,17 @@ class _CancelBookingModalState extends State<CancelBookingModal> {
     });
 
     try {
-      // TODO: Implement cancellation API call
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
+      final success = await context
+          .read<BookingProvider>()
+          .cancelBookingWithReason(
+            widget.booking.id!,
+            _selectedReason,
+            _messageController.text.trim().isEmpty
+                ? null
+                : _messageController.text.trim(),
+          );
 
-      if (mounted) {
+      if (success && mounted) {
         widget.onCancelled();
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(

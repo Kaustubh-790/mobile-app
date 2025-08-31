@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/booking_provider.dart';
 import '../../../models/booking.dart';
 
 class RatingModal extends StatefulWidget {
   final Booking booking;
   final int serviceIndex;
-  final VoidCallback onRatingSubmitted;
+  final VoidCallback onRated;
 
   const RatingModal({
     super.key,
     required this.booking,
     required this.serviceIndex,
-    required this.onRatingSubmitted,
+    required this.onRated,
   });
 
   @override
@@ -18,7 +20,7 @@ class RatingModal extends StatefulWidget {
 }
 
 class _RatingModalState extends State<RatingModal> {
-  int _rating = 0;
+  double _rating = 0;
   final TextEditingController _reviewController = TextEditingController();
   bool _isSubmitting = false;
 
@@ -29,18 +31,32 @@ class _RatingModalState extends State<RatingModal> {
   }
 
   Future<void> _submitRating() async {
-    if (_rating == 0) return;
+    if (_rating == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a rating'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-      // TODO: Implement rating submission to API
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
+      final success = await context.read<BookingProvider>().rateService(
+        widget.booking.id!,
+        widget.serviceIndex,
+        _rating,
+        _reviewController.text.trim().isEmpty
+            ? null
+            : _reviewController.text.trim(),
+      );
 
-      if (mounted) {
-        widget.onRatingSubmitted();
+      if (success && mounted) {
+        widget.onRated();
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -101,15 +117,38 @@ class _RatingModalState extends State<RatingModal> {
             ),
             const SizedBox(height: 16),
 
-            Text(
-              'Service: ${service.serviceId}',
-              style: const TextStyle(color: Colors.grey, fontSize: 14),
+            // Service Info
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    service.serviceId,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Price: ₹${service.price.toStringAsFixed(2)}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
 
-            // Rating Stars
+            // Rating
             Text(
-              'Rating',
+              'Rating *',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
@@ -117,42 +156,28 @@ class _RatingModalState extends State<RatingModal> {
               ),
             ),
             const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(5, (index) {
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _rating = index + 1;
-                    });
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
+            Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _rating = index + 1;
+                      });
+                    },
                     child: Icon(
                       index < _rating ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
                       size: 40,
+                      color: index < _rating ? Colors.amber : Colors.grey,
                     ),
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 8),
-            Center(
-              child: Text(
-                _rating > 0
-                    ? '$_rating Star${_rating > 1 ? 's' : ''}'
-                    : 'Tap to rate',
-                style: TextStyle(
-                  color: _rating > 0 ? Colors.amber : Colors.grey,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+                  );
+                }),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Review Text
+            // Review
             Text(
               'Review (Optional)',
               style: const TextStyle(
@@ -189,6 +214,7 @@ class _RatingModalState extends State<RatingModal> {
                 ),
               ),
             ),
+
             const SizedBox(height: 24),
 
             // Action Buttons
@@ -208,7 +234,7 @@ class _RatingModalState extends State<RatingModal> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _rating == 0 || _isSubmitting
+                    onPressed: _isSubmitting || _rating == 0
                         ? null
                         : _submitRating,
                     style: ElevatedButton.styleFrom(

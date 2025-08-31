@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../models/booking.dart';
 import '../../../utils/status_utils.dart';
+import 'rating_modal.dart';
+import 'reschedule_modal.dart';
 
 class ServiceItemCard extends StatelessWidget {
   final BookingService service;
@@ -145,10 +147,12 @@ class ServiceItemCard extends StatelessWidget {
                 if (canRate)
                   ElevatedButton.icon(
                     onPressed: () {
-                      // TODO: Show rating modal
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Rating functionality coming soon!'),
+                      showDialog(
+                        context: context,
+                        builder: (context) => RatingModal(
+                          booking: booking,
+                          serviceIndex: serviceIndex,
+                          onRated: onRefresh,
                         ),
                       );
                     },
@@ -169,12 +173,12 @@ class ServiceItemCard extends StatelessWidget {
                 if (canReschedule)
                   ElevatedButton.icon(
                     onPressed: () {
-                      // TODO: Show reschedule modal
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Reschedule functionality coming soon!',
-                          ),
+                      showDialog(
+                        context: context,
+                        builder: (context) => RescheduleModal(
+                          booking: booking,
+                          serviceIndex: serviceIndex,
+                          onRescheduled: onRefresh,
                         ),
                       );
                     },

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/booking_provider.dart';
 import '../../../models/booking.dart';
 
 class RescheduleModal extends StatefulWidget {
@@ -26,39 +28,27 @@ class _RescheduleModalState extends State<RescheduleModal> {
   @override
   void initState() {
     super.initState();
-    // Set default values
+    // Initialize with current service date/time or booking date/time
     final service = widget.booking.services[widget.serviceIndex];
-    _selectedDate = service.scheduledDate ?? widget.booking.bookingDate;
-    _selectedTime = _parseTimeString(
-      service.scheduledTime ?? widget.booking.bookingTime,
-    );
+    _selectedDate = service.rescheduledDate ?? widget.booking.bookingDate;
+    _selectedTime = service.rescheduledTime != null
+        ? TimeOfDay.fromDateTime(
+            DateTime.parse('2000-01-01 ${service.rescheduledTime}:00'),
+          )
+        : TimeOfDay.fromDateTime(
+            DateTime.parse('2000-01-01 ${widget.booking.bookingTime}:00'),
+          );
   }
 
-  TimeOfDay? _parseTimeString(String timeString) {
-    try {
-      final parts = timeString.split(':');
-      if (parts.length == 2) {
-        return TimeOfDay(
-          hour: int.parse(parts[0]),
-          minute: int.parse(parts[1]),
-        );
-      }
-    } catch (e) {
-      // Return null if parsing fails
-    }
-    return const TimeOfDay(hour: 10, minute: 0);
-  }
-
-  Future<void> _selectDate() async {
+  Future<void> _selectDate(BuildContext context) async {
     final service = widget.booking.services[widget.serviceIndex];
     final originalDate = service.scheduledDate ?? widget.booking.bookingDate;
-    final maxDate = originalDate.add(const Duration(days: 2));
 
-    final picked = await showDatePicker(
+    final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate ?? originalDate,
       firstDate: originalDate,
-      lastDate: maxDate,
+      lastDate: originalDate.add(const Duration(days: 2)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -68,13 +58,14 @@ class _RescheduleModalState extends State<RescheduleModal> {
               surface: Color(0xFF1A1A2E),
               onSurface: Colors.white,
             ),
+            dialogBackgroundColor: const Color(0xFF1A1A2E),
           ),
           child: child!,
         );
       },
     );
 
-    if (picked != null) {
+    if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
         _errorMessage = null;
@@ -82,10 +73,10 @@ class _RescheduleModalState extends State<RescheduleModal> {
     }
   }
 
-  Future<void> _selectTime() async {
-    final picked = await showTimePicker(
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: _selectedTime ?? const TimeOfDay(hour: 10, minute: 0),
+      initialTime: _selectedTime ?? TimeOfDay.now(),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -95,13 +86,14 @@ class _RescheduleModalState extends State<RescheduleModal> {
               surface: Color(0xFF1A1A2E),
               onSurface: Colors.white,
             ),
+            dialogBackgroundColor: const Color(0xFF1A1A2E),
           ),
           child: child!,
         );
       },
     );
 
-    if (picked != null) {
+    if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
         _errorMessage = null;
@@ -109,48 +101,58 @@ class _RescheduleModalState extends State<RescheduleModal> {
     }
   }
 
-  bool _validateReschedule() {
+  Future<void> _submitReschedule() async {
     if (_selectedDate == null || _selectedTime == null) {
       setState(() {
         _errorMessage = 'Please select both date and time';
       });
-      return false;
+      return;
     }
 
     final service = widget.booking.services[widget.serviceIndex];
     final originalDate = service.scheduledDate ?? widget.booking.bookingDate;
-    final maxDate = originalDate.add(const Duration(days: 2));
+    final originalDateObj = DateTime(
+      originalDate.year,
+      originalDate.month,
+      originalDate.day,
+    );
+    final selectedDateObj = DateTime(
+      _selectedDate!.year,
+      _selectedDate!.month,
+      _selectedDate!.day,
+    );
+    final maxDateObj = originalDateObj.add(const Duration(days: 2));
 
-    if (_selectedDate!.isBefore(originalDate)) {
+    if (selectedDateObj.isBefore(originalDateObj)) {
       setState(() {
         _errorMessage = 'Cannot reschedule to before original date';
       });
-      return false;
-    }
-
-    if (_selectedDate!.isAfter(maxDate)) {
+      return;
+    } else if (selectedDateObj.isAfter(maxDateObj)) {
       setState(() {
         _errorMessage =
             'You can only reschedule up to 2 days after original date';
       });
-      return false;
+      return;
     }
-
-    return true;
-  }
-
-  Future<void> _submitReschedule() async {
-    if (!_validateReschedule()) return;
 
     setState(() {
       _isSubmitting = true;
+      _errorMessage = null;
     });
 
     try {
-      // TODO: Implement reschedule API call
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
+      final newTime =
+          '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}';
 
-      if (mounted) {
+      final success = await context.read<BookingProvider>().rescheduleService(
+        widget.booking.id!,
+        widget.serviceIndex,
+        _selectedDate!,
+        newTime,
+      );
+
+      if (success && mounted) {
         widget.onRescheduled();
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -163,7 +165,7 @@ class _RescheduleModalState extends State<RescheduleModal> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Error rescheduling service: $e';
+          _errorMessage = e.toString();
         });
       }
     } finally {
@@ -211,20 +213,48 @@ class _RescheduleModalState extends State<RescheduleModal> {
             ),
             const SizedBox(height: 16),
 
-            Text(
-              'Service: ${service.serviceId}',
-              style: const TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Original: ${_formatDate(originalDate)} at $originalTime',
-              style: const TextStyle(color: Colors.orange, fontSize: 14),
+            // Service Info
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    service.serviceId,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Original: ${_formatDate(originalDate)} at $originalTime',
+                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                  if (service.rescheduleCount > 0) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Rescheduled ${service.rescheduleCount} time(s)',
+                      style: const TextStyle(
+                        color: Colors.orange,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
             const SizedBox(height: 24),
 
-            // Date Selection
+            // New Date Selection
             Text(
-              'New Date (within 2 days of original)',
+              'New Date *',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
@@ -233,7 +263,7 @@ class _RescheduleModalState extends State<RescheduleModal> {
             ),
             const SizedBox(height: 12),
             InkWell(
-              onTap: _selectDate,
+              onTap: () => _selectDate(context),
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -243,11 +273,7 @@ class _RescheduleModalState extends State<RescheduleModal> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      color: Color(0xFF8C11FF),
-                      size: 20,
-                    ),
+                    const Icon(Icons.calendar_today, color: Color(0xFF8C11FF)),
                     const SizedBox(width: 12),
                     Text(
                       _selectedDate != null
@@ -260,15 +286,17 @@ class _RescheduleModalState extends State<RescheduleModal> {
                         fontSize: 16,
                       ),
                     ),
+                    const Spacer(),
+                    const Icon(Icons.arrow_drop_down, color: Colors.grey),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 16),
 
-            // Time Selection
+            // New Time Selection
             Text(
-              'New Time',
+              'New Time *',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
@@ -277,7 +305,7 @@ class _RescheduleModalState extends State<RescheduleModal> {
             ),
             const SizedBox(height: 12),
             InkWell(
-              onTap: _selectTime,
+              onTap: () => _selectTime(context),
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -287,11 +315,7 @@ class _RescheduleModalState extends State<RescheduleModal> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.access_time,
-                      color: Color(0xFF8C11FF),
-                      size: 20,
-                    ),
+                    const Icon(Icons.access_time, color: Color(0xFF8C11FF)),
                     const SizedBox(width: 12),
                     Text(
                       _selectedTime != null
@@ -304,6 +328,8 @@ class _RescheduleModalState extends State<RescheduleModal> {
                         fontSize: 16,
                       ),
                     ),
+                    const Spacer(),
+                    const Icon(Icons.arrow_drop_down, color: Colors.grey),
                   ],
                 ),
               ),
@@ -353,7 +379,12 @@ class _RescheduleModalState extends State<RescheduleModal> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _isSubmitting ? null : _submitReschedule,
+                    onPressed:
+                        _isSubmitting ||
+                            _selectedDate == null ||
+                            _selectedTime == null
+                        ? null
+                        : _submitReschedule,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF8C11FF),
                       foregroundColor: Colors.white,

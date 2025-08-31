@@ -204,7 +204,157 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
-  /// Reschedule a booking
+  /// Cancel a booking with reason and message
+  Future<bool> cancelBookingWithReason(
+    String bookingId,
+    String reason,
+    String? message,
+  ) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final success = await api.BookingService.cancelBookingWithReason(
+        bookingId,
+        reason,
+        message,
+      );
+
+      if (success) {
+        // Remove from my bookings list
+        _myBookings.removeWhere((b) => b.id == bookingId);
+
+        // Clear current booking if it's the same one
+        if (_currentBooking?.id == bookingId) {
+          _currentBooking = null;
+        }
+      }
+
+      _setLoading(false);
+      notifyListeners();
+
+      return success;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Rate a service
+  Future<bool> rateService(
+    String bookingId,
+    int serviceIndex,
+    double rating,
+    String? review,
+  ) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final success = await api.BookingService.rateService(
+        bookingId,
+        serviceIndex,
+        rating,
+        review,
+      );
+
+      if (success) {
+        // Update the local booking data
+        final bookingIndex = _myBookings.indexWhere((b) => b.id == bookingId);
+        if (bookingIndex != -1) {
+          final booking = _myBookings[bookingIndex];
+          final services = List<BookingService>.from(booking.services);
+
+          if (serviceIndex < services.length) {
+            services[serviceIndex] = services[serviceIndex].copyWith(
+              serviceRating: rating,
+              serviceReview: review,
+            );
+
+            final updatedBooking = booking.copyWith(services: services);
+            _myBookings[bookingIndex] = updatedBooking;
+
+            // Update current booking if it's the same
+            if (_currentBooking?.id == bookingId) {
+              _currentBooking = updatedBooking;
+            }
+          }
+        }
+      }
+
+      _setLoading(false);
+      notifyListeners();
+
+      return success;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Reschedule a service
+  Future<bool> rescheduleService(
+    String bookingId,
+    int serviceIndex,
+    DateTime newDate,
+    String newTime,
+  ) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final success = await api.BookingService.rescheduleService(
+        bookingId,
+        serviceIndex,
+        newDate,
+        newTime,
+      );
+
+      if (success) {
+        // Update the local booking data
+        final bookingIndex = _myBookings.indexWhere((b) => b.id == bookingId);
+        if (bookingIndex != -1) {
+          final booking = _myBookings[bookingIndex];
+          final services = List<BookingService>.from(booking.services);
+
+          if (serviceIndex < services.length) {
+            services[serviceIndex] = services[serviceIndex].copyWith(
+              rescheduleCount:
+                  (services[serviceIndex].rescheduleCount ?? 0) + 1,
+              rescheduledDate: newDate,
+              rescheduledTime: newTime,
+              status: 'rescheduled',
+            );
+
+            final updatedBooking = booking.copyWith(services: services);
+            _myBookings[bookingIndex] = updatedBooking;
+
+            // Update current booking if it's the same
+            if (_currentBooking?.id == bookingId) {
+              _currentBooking = updatedBooking;
+            }
+          }
+        }
+      }
+
+      _setLoading(false);
+      notifyListeners();
+
+      return success;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Reschedule a booking (legacy method - use rescheduleService instead)
+  @Deprecated('Use rescheduleService instead')
   Future<Booking?> rescheduleBooking(
     String bookingId,
     DateTime newDate,
@@ -214,27 +364,20 @@ class BookingProvider extends ChangeNotifier {
       _setLoading(true);
       _clearError();
 
-      final updatedBooking = await api.BookingService.rescheduleBooking(
-        bookingId,
-        newDate,
-        newTime,
-      );
+      // Use the new rescheduleService method
+      final success = await rescheduleService(bookingId, 0, newDate, newTime);
 
-      // Update in my bookings list
-      final index = _myBookings.indexWhere((b) => b.id == bookingId);
-      if (index != -1) {
-        _myBookings[index] = updatedBooking;
+      if (success) {
+        // Get the updated booking
+        final updatedBooking = await getBookingById(bookingId);
+        _setLoading(false);
+        notifyListeners();
+        return updatedBooking;
+      } else {
+        _setLoading(false);
+        notifyListeners();
+        return null;
       }
-
-      // Update current booking if it's the same one
-      if (_currentBooking?.id == bookingId) {
-        _currentBooking = updatedBooking;
-      }
-
-      _setLoading(false);
-      notifyListeners();
-
-      return updatedBooking;
     } catch (e) {
       _setError(e.toString());
       _setLoading(false);
@@ -375,6 +518,28 @@ class BookingProvider extends ChangeNotifier {
 
   /// Check if user has completed bookings
   bool get hasCompletedBookings => completedBookings.isNotEmpty;
+
+  /// Get cancellation details for a booking
+  Future<Map<String, dynamic>?> getCancellationDetails(String bookingId) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final details = await api.BookingService.getCancellationDetails(
+        bookingId,
+      );
+
+      _setLoading(false);
+      notifyListeners();
+
+      return details;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      notifyListeners();
+      return null;
+    }
+  }
 
   // Private helper methods
   void _setLoading(bool loading) {
