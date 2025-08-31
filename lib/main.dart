@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'src/providers/auth_provider.dart';
 import 'src/providers/services_provider.dart';
 import 'src/providers/cart_provider.dart';
+import 'src/providers/booking_provider.dart';
 import 'src/screens/auth/login_screen.dart';
 import 'src/screens/home/home_screen.dart';
 import 'src/screens/service/service_detail_screen.dart';
@@ -10,6 +11,7 @@ import 'src/screens/settings/contact_us.dart';
 import 'src/screens/settings/my_profile.dart';
 import 'src/screens/settings/settings_screen.dart';
 import 'src/config/firebase_config.dart';
+import 'src/screens/checkout/checkout_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +43,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider(create: (_) => ServicesProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => BookingProvider()),
       ],
       child: MaterialApp(
         title: 'User App',
@@ -54,6 +57,7 @@ class MyApp extends StatelessWidget {
           '/contact-us': (context) => const ContactUsScreen(),
           '/my-profile': (context) => const MyProfileScreen(),
           '/settings': (context) => const SettingsScreen(),
+          '/checkout': (context) => const CheckoutScreen(),
         },
       ),
     );

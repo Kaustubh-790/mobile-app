@@ -6,7 +6,7 @@ class CartService {
   static final ApiClient _apiClient = ApiClient();
 
   /// Get user's cart
-  static Future<List<CartItem>> getCart({String? userId}) async {
+  static Future<Map<String, dynamic>> getCart({String? userId}) async {
     try {
       print('CartService: Fetching cart...');
 
@@ -37,10 +37,14 @@ class CartService {
           }
         }).toList();
 
+        // Extract cart ID from response
+        final String? cartId = cartData['_id']?.toString();
+
         print(
-          'CartService: Successfully fetched ${cartItems.length} cart items',
+          'CartService: Successfully fetched ${cartItems.length} cart items with cartId: $cartId',
         );
-        return cartItems;
+
+        return {'cartId': cartId, 'items': cartItems};
       } else {
         print(
           'CartService: Error fetching cart - Status: ${response.statusCode}',

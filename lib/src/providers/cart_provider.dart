@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 import '../models/cart_item.dart';
 import '../api/cart_service.dart';
-import '../models/user.dart';
 
 class CartProvider extends ChangeNotifier {
   List<CartItem> _cartItems = [];
   double _totalPrice = 0.0;
   bool _isLoading = false;
   String? _error;
+  String? _cartId; // Add cart ID field
 
   // Getters
   List<CartItem> get cartItems => _cartItems;
@@ -15,6 +15,7 @@ class CartProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   int get itemCount => _cartItems.length;
+  String? get cartId => _cartId; // Add cart ID getter
 
   /// Fetch cart from backend
   Future<void> fetchCart({String? userId}) async {
@@ -22,11 +23,14 @@ class CartProvider extends ChangeNotifier {
       _setLoading(true);
       _clearError();
 
-      final items = await CartService.getCart(userId: userId);
-      _cartItems = items;
+      final cartData = await CartService.getCart(userId: userId);
+      _cartItems = cartData['items'] as List<CartItem>;
+      _cartId = cartData['cartId'] as String?;
       _calculateTotalPrice();
 
-      print('CartProvider: Fetched ${items.length} cart items');
+      print(
+        'CartProvider: Fetched ${_cartItems.length} cart items with cartId: $_cartId',
+      );
       notifyListeners();
     } catch (e) {
       _setError('Failed to fetch cart: $e');

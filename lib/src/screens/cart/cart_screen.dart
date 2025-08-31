@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../models/cart_item.dart';
 import '../../providers/auth_provider.dart';
+import '../checkout/checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -315,7 +316,7 @@ class _CartScreenState extends State<CartScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: cartProvider.cartItems.isNotEmpty
-                    ? () => _showCheckoutPlaceholder(context)
+                    ? () => _navigateToCheckout(context)
                     : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,
@@ -413,23 +414,11 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  void _showCheckoutPlaceholder(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Checkout'),
-          content: const Text(
-            'Checkout functionality will be implemented in the next phase.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+  // In cart_screen.dart, replace the _showCheckoutPlaceholder function with:
+  void _navigateToCheckout(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CheckoutScreen()),
     );
   }
 }
