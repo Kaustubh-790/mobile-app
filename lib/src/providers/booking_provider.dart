@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import '../models/booking.dart';
 import '../models/cart_item.dart';
 import '../api/booking_service.dart' as api;
+import '../providers/auth_provider.dart';
+import '../api/api_client.dart';
 
 class BookingProvider extends ChangeNotifier {
   List<Booking> _myBookings = [];
@@ -21,12 +23,51 @@ class BookingProvider extends ChangeNotifier {
       _setLoading(true);
       _clearError();
 
-      final bookings = await api.BookingService.getMyBookings();
+      // Check if user is authenticated
+      final authProvider = AuthProvider();
+      print('BookingProvider: Checking authentication state...');
+      print(
+        'BookingProvider: isAuthenticated: ${authProvider.isAuthenticated}',
+      );
+      print(
+        'BookingProvider: authToken: ${authProvider.authToken != null ? "Present" : "Missing"}',
+      );
+      print(
+        'BookingProvider: currentUser: ${authProvider.currentUser?.name ?? "None"}',
+      );
+
+      if (!authProvider.isAuthenticated) {
+        throw Exception('User not authenticated. Please log in again.');
+      }
+
+      // Ensure auth token is set in API client
+      if (authProvider.authToken != null) {
+        print('BookingProvider: Setting auth token in API client...');
+        ApiClient().setAuthToken(authProvider.authToken!);
+      } else {
+        print('BookingProvider: Warning - No auth token available');
+        throw Exception(
+          'Authentication token is missing. Please log in again.',
+        );
+      }
+
+      print('BookingProvider: Making API call to fetch bookings...');
+
+      // Check if user Firebase UID is available
+      final userId = authProvider.currentUser?.firebaseUid;
+      if (userId == null || userId.isEmpty) {
+        print('BookingProvider: Warning - Firebase UID is not available');
+        throw Exception('User profile not fully loaded. Please try again.');
+      }
+
+      print('BookingProvider: Using Firebase UID: $userId');
+      final bookings = await api.BookingService.getMyBookings(userId);
       _myBookings = bookings;
 
       _setLoading(false);
       notifyListeners();
     } catch (e) {
+      print('BookingProvider: Error in fetchMyBookings: $e');
       _setError(e.toString());
       _setLoading(false);
       notifyListeners();

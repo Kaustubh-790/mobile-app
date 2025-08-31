@@ -9,6 +9,7 @@ import '../cart/cart_screen.dart';
 import '../settings/contact_us.dart';
 import '../settings/my_profile.dart';
 import '../settings/settings_screen.dart';
+import '../my_bookings/my_bookings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -102,6 +103,19 @@ class HomeScreen extends StatelessWidget {
               );
             },
             tooltip: 'My Profile',
+          ),
+          // My Bookings Icon
+          IconButton(
+            icon: const Icon(Icons.bookmark),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MyBookingsScreen(),
+                ),
+              );
+            },
+            tooltip: 'My Bookings',
           ),
           IconButton(
             icon: const Icon(Icons.logout),

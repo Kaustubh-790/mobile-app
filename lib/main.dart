@@ -12,6 +12,7 @@ import 'src/screens/settings/my_profile.dart';
 import 'src/screens/settings/settings_screen.dart';
 import 'src/config/firebase_config.dart';
 import 'src/screens/checkout/checkout_screen.dart';
+import 'src/screens/my_bookings/my_bookings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,6 +59,7 @@ class MyApp extends StatelessWidget {
           '/my-profile': (context) => const MyProfileScreen(),
           '/settings': (context) => const SettingsScreen(),
           '/checkout': (context) => const CheckoutScreen(),
+          '/my-bookings': (context) => const MyBookingsScreen(),
         },
       ),
     );

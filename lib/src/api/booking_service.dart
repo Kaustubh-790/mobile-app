@@ -94,6 +94,7 @@ class BookingService {
       final response = await _apiClient.instance.post(
         '/bookings/cart',
         data: requestData,
+        options: Options(headers: {'X-Auth-Type': 'user'}),
       );
 
       if (response.statusCode == 201) {
@@ -157,15 +158,38 @@ class BookingService {
   }
 
   /// Get all bookings for the current user
-  static Future<List<Booking>> getMyBookings() async {
+  static Future<List<Booking>> getMyBookings([String? userId]) async {
     try {
       print('BookingService: Fetching user bookings...');
+      print('BookingService: Base URL: ${_apiClient.instance.options.baseUrl}');
+      print('BookingService: User ID: $userId');
+      print('BookingService: Headers: ${_apiClient.instance.options.headers}');
 
-      final response = await _apiClient.instance.get('/bookings/user/me');
+      // Use the correct endpoint based on documentation
+      final endpoint = userId != null
+          ? '/bookings/user/$userId'
+          : '/bookings/user/me';
+
+      print('BookingService: Using endpoint: $endpoint');
+      print(
+        'BookingService: Full URL: ${_apiClient.instance.options.baseUrl}$endpoint',
+      );
+
+      // Make the request with proper headers
+      final response = await _apiClient.instance.get(
+        endpoint,
+        options: Options(headers: {'X-Auth-Type': 'user'}),
+      );
 
       if (response.statusCode == 200) {
-        final List<dynamic> bookingsData = response.data;
-        print('BookingService: Raw bookings response: $bookingsData');
+        // Handle the response structure from backend: { bookings: [...], pagination: {...} }
+        final Map<String, dynamic> responseData = response.data;
+        print('BookingService: Raw response data: $responseData');
+
+        // Extract bookings from the response - handle both formats
+        final List<dynamic> bookingsData =
+            responseData['bookings'] ?? responseData;
+        print('BookingService: Extracted bookings data: $bookingsData');
 
         final bookings = bookingsData.map((json) {
           try {
@@ -182,10 +206,9 @@ class BookingService {
         );
         return bookings;
       } else {
-        print(
-          'BookingService: Error fetching bookings - Status: ${response.statusCode}',
+        throw Exception(
+          'Failed to load bookings: Status ${response.statusCode}',
         );
-        throw Exception('Failed to load bookings');
       }
     } catch (e) {
       print('BookingService: Exception while fetching bookings - $e');
@@ -193,6 +216,10 @@ class BookingService {
       if (e is DioException) {
         print('BookingService: DioException type: ${e.type}');
         print('BookingService: DioException message: ${e.message}');
+        print('BookingService: Request URL: ${e.requestOptions.uri}');
+        print('BookingService: Request headers: ${e.requestOptions.headers}');
+        print('BookingService: Response status: ${e.response?.statusCode}');
+        print('BookingService: Response data: ${e.response?.data}');
 
         switch (e.type) {
           case DioExceptionType.connectionTimeout:
@@ -208,6 +235,12 @@ class BookingService {
           case DioExceptionType.badResponse:
             if (e.response?.statusCode == 401) {
               throw Exception('Authentication required. Please log in again.');
+            } else if (e.response?.statusCode == 403) {
+              throw Exception(
+                'Access forbidden. Please check your authentication or contact support.',
+              );
+            } else if (e.response?.statusCode == 404) {
+              throw Exception('User not found or no bookings available.');
             }
             break;
           default:
@@ -224,7 +257,10 @@ class BookingService {
     try {
       print('BookingService: Fetching booking with ID: $id');
 
-      final response = await _apiClient.instance.get('/bookings/$id');
+      final response = await _apiClient.instance.get(
+        '/bookings/$id',
+        options: Options(headers: {'X-Auth-Type': 'user'}),
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> bookingData = response.data;
@@ -284,6 +320,7 @@ class BookingService {
       final response = await _apiClient.instance.put(
         '/bookings/$bookingId/status',
         data: {'status': status},
+        options: Options(headers: {'X-Auth-Type': 'user'}),
       );
 
       if (response.statusCode == 200) {
@@ -338,7 +375,10 @@ class BookingService {
     try {
       print('BookingService: Cancelling booking: $bookingId');
 
-      final response = await _apiClient.instance.delete('/bookings/$bookingId');
+      final response = await _apiClient.instance.delete(
+        '/bookings/$bookingId',
+        options: Options(headers: {'X-Auth-Type': 'user'}),
+      );
 
       if (response.statusCode == 200) {
         print('BookingService: Successfully cancelled booking');
@@ -398,6 +438,7 @@ class BookingService {
           'scheduledDate': newDate.toIso8601String(),
           'scheduledTime': newTime,
         },
+        options: Options(headers: {'X-Auth-Type': 'user'}),
       );
 
       if (response.statusCode == 200) {
@@ -464,6 +505,7 @@ class BookingService {
           'paymentMethod': paymentMethod,
           'cardLast4': cardLast4,
         },
+        options: Options(headers: {'X-Auth-Type': 'user'}),
       );
 
       if (response.statusCode == 200) {

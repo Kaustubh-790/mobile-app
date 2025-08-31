@@ -46,6 +46,9 @@ class ApiClient {
   /// Sets the Authorization header with the provided token
   void setAuthToken(String token) {
     dio.options.headers['Authorization'] = 'Bearer $token';
+    // Also try alternative header formats that some backends expect
+    dio.options.headers['X-Auth-Token'] = token;
+    dio.options.headers['X-API-Key'] = token;
     print('ApiClient: Auth token set');
   }
 
