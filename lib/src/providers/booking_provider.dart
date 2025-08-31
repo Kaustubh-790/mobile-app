@@ -279,6 +279,53 @@ class BookingProvider extends ChangeNotifier {
   /// Check if user has any bookings
   bool get hasBookings => _myBookings.isNotEmpty;
 
+  /// Update payment status for a booking
+  Future<bool> updatePaymentStatus(
+    String bookingId,
+    String paymentStatus,
+    String paymentMethod,
+    String cardLast4,
+  ) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final success = await api.BookingService.updatePaymentStatus(
+        bookingId,
+        paymentStatus,
+        paymentMethod,
+        cardLast4,
+      );
+
+      if (success) {
+        // Update local booking data
+        final bookingIndex = _myBookings.indexWhere((b) => b.id == bookingId);
+        if (bookingIndex != -1) {
+          final updatedBooking = _myBookings[bookingIndex].copyWith(
+            paymentStatus: paymentStatus,
+            paymentMethod: paymentMethod,
+            cardLast4: cardLast4,
+          );
+          _myBookings[bookingIndex] = updatedBooking;
+
+          // Update current booking if it's the same
+          if (_currentBooking?.id == bookingId) {
+            _currentBooking = updatedBooking;
+          }
+        }
+      }
+
+      _setLoading(false);
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Check if user has pending bookings
   bool get hasPendingBookings => pendingBookings.isNotEmpty;
 

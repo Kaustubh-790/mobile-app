@@ -446,4 +446,66 @@ class BookingService {
       throw Exception('Failed to reschedule booking: $e');
     }
   }
+
+  /// Update payment status for a booking
+  static Future<bool> updatePaymentStatus(
+    String bookingId,
+    String paymentStatus,
+    String paymentMethod,
+    String cardLast4,
+  ) async {
+    try {
+      print('BookingService: Updating payment status for booking: $bookingId');
+
+      final response = await _apiClient.instance.put(
+        '/bookings/$bookingId/payment',
+        data: {
+          'paymentStatus': paymentStatus,
+          'paymentMethod': paymentMethod,
+          'cardLast4': cardLast4,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('BookingService: Successfully updated payment status');
+        return true;
+      } else {
+        print(
+          'BookingService: Error updating payment status - Status: ${response.statusCode}',
+        );
+        return false;
+      }
+    } catch (e) {
+      print('BookingService: Exception while updating payment status - $e');
+
+      if (e is DioException) {
+        print('BookingService: DioException type: ${e.type}');
+        print('BookingService: DioException message: ${e.message}');
+
+        switch (e.type) {
+          case DioExceptionType.connectionTimeout:
+          case DioExceptionType.receiveTimeout:
+          case DioExceptionType.sendTimeout:
+            throw Exception(
+              'Connection timeout. Please check your internet connection.',
+            );
+          case DioExceptionType.connectionError:
+            throw Exception(
+              'Unable to connect to server. Please try again later.',
+            );
+          case DioExceptionType.badResponse:
+            if (e.response?.statusCode == 401) {
+              throw Exception('Authentication required. Please log in again.');
+            } else if (e.response?.statusCode == 404) {
+              throw Exception('Booking not found.');
+            }
+            break;
+          default:
+            throw Exception('Network error occurred. Please try again.');
+        }
+      }
+
+      throw Exception('Failed to update payment status: $e');
+    }
+  }
 }

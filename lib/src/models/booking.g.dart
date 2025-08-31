@@ -7,7 +7,7 @@ part of 'booking.dart';
 // **************************************************************************
 
 Booking _$BookingFromJson(Map<String, dynamic> json) => Booking(
-  id: json['id'] as String?,
+  id: json['_id'] as String?,
   userId: json['userId'] as String,
   cartId: json['cartId'] as String,
   services: (json['services'] as List<dynamic>)
@@ -29,18 +29,22 @@ Booking _$BookingFromJson(Map<String, dynamic> json) => Booking(
       ? null
       : DateTime.parse(json['scheduledDate'] as String),
   scheduledTime: json['scheduledTime'] as String?,
-  address: json['address'] as String,
-  duration: json['duration'] as String,
+  address: json['address'] as String?,
+  duration: json['duration'] as String?,
   completedAt: json['completedAt'] == null
       ? null
       : DateTime.parse(json['completedAt'] as String),
-  rescheduleCount: (json['rescheduleCount'] as num).toInt(),
+  rescheduleCount: (json['rescheduleCount'] as num?)?.toInt(),
   createdAt: DateTime.parse(json['createdAt'] as String),
   updatedAt: DateTime.parse(json['updatedAt'] as String),
+  bookingCounted: json['bookingCounted'] as bool?,
+  workerAssignments: json['workerAssignments'] as List<dynamic>?,
+  refundStatus: json['refundStatus'] as String?,
+  cancellationFee: (json['cancellationFee'] as num?)?.toDouble(),
 );
 
 Map<String, dynamic> _$BookingToJson(Booking instance) => <String, dynamic>{
-  'id': instance.id,
+  '_id': instance.id,
   'userId': instance.userId,
   'cartId': instance.cartId,
   'services': instance.services,
@@ -62,12 +66,16 @@ Map<String, dynamic> _$BookingToJson(Booking instance) => <String, dynamic>{
   'rescheduleCount': instance.rescheduleCount,
   'createdAt': instance.createdAt.toIso8601String(),
   'updatedAt': instance.updatedAt.toIso8601String(),
+  'bookingCounted': instance.bookingCounted,
+  'workerAssignments': instance.workerAssignments,
+  'refundStatus': instance.refundStatus,
+  'cancellationFee': instance.cancellationFee,
 };
 
 BookingService _$BookingServiceFromJson(Map<String, dynamic> json) =>
     BookingService(
       serviceId: json['serviceId'] as String,
-      packageId: json['packageId'] as String?,
+      packageId: json['packageId'],
       quantity: (json['quantity'] as num).toInt(),
       customizations: json['customizations'] as Map<String, dynamic>?,
       price: (json['price'] as num).toDouble(),

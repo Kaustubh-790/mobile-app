@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
-import '../../providers/booking_provider.dart';
+
 import '../../providers/auth_provider.dart';
 import '../../models/cart_item.dart';
 import '../../models/booking.dart';
+import '../../providers/booking_provider.dart';
+import 'payment_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -246,7 +248,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '\₹${cartProvider.totalPrice.toStringAsFixed(2)}',
+                  '₹${cartProvider.totalPrice.toStringAsFixed(2)}',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary,
@@ -309,7 +311,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
           const SizedBox(width: 16),
           Text(
-            '\₹${(item.price * item.quantity).toStringAsFixed(2)}',
+            '₹${(item.price * item.quantity).toStringAsFixed(2)}',
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
@@ -579,7 +581,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '\₹${cartProvider.totalPrice.toStringAsFixed(2)}',
+                  '₹${cartProvider.totalPrice.toStringAsFixed(2)}',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary,
@@ -617,7 +619,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                   )
                 : const Text(
-                    'Confirm Booking',
+                    'Proceed to Payment',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
           ),
@@ -626,7 +628,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         // Terms and Conditions
         const SizedBox(height: 16),
         Text(
-          'By confirming this booking, you agree to our terms and conditions.',
+          'By proceeding to payment, you agree to our terms and conditions.',
           style: Theme.of(
             context,
           ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
@@ -664,11 +666,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     try {
       final bookingProvider = context.read<BookingProvider>();
-
       final authProvider = context.read<AuthProvider>();
+
       final userId = authProvider.currentUser?.id;
       if (userId == null) {
         throw Exception('User not authenticated');
+      }
+
+      final cartId = cartProvider.cartId;
+      if (cartId == null) {
+        throw Exception('Cart ID not found. Please refresh your cart.');
       }
 
       // Get user profile data
@@ -680,11 +687,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'address': user.address,
       };
 
-      final cartId = cartProvider.cartId;
-      if (cartId == null) {
-        throw Exception('Cart ID not found. Please refresh your cart.');
-      }
-
+      // Create booking first
       final booking = await bookingProvider.createBooking(
         cartProvider.cartItems,
         cartProvider.totalPrice,
@@ -699,28 +702,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         bookingTime: _formatTimeForBackend(_selectedTime!),
       );
 
-      if (booking != null) {
-        // Navigate to success screen
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CheckoutSuccessScreen(booking: booking),
+      if (booking == null) {
+        throw Exception(bookingProvider.error ?? 'Failed to create booking');
+      }
+
+      // Navigate to payment screen with the created booking
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentScreen(
+              existingBooking: booking,
+              cartItems: cartProvider.cartItems,
+              totalAmount: cartProvider.totalPrice,
+              address: _addressController.text.trim(),
+              notes: _notesController.text.trim().isEmpty
+                  ? null
+                  : _notesController.text.trim(),
+              bookingDate: _selectedDate!,
+              bookingTime: _formatTimeForBackend(_selectedTime!),
             ),
-          );
-        }
-      } else {
-        // Show error
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                bookingProvider.error ?? 'Failed to create booking',
-              ),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -790,10 +793,13 @@ class CheckoutSuccessScreen extends StatelessWidget {
                       _buildDetailRow('Booking ID', booking.id ?? 'N/A'),
                       _buildDetailRow(
                         'Total Amount',
-                        '\₹${booking.totalAmount.toStringAsFixed(2)}',
+                        '₹${booking.totalAmount.toStringAsFixed(2)}',
                       ),
                       _buildDetailRow('Status', booking.status.toUpperCase()),
-                      _buildDetailRow('Address', booking.address),
+                      _buildDetailRow(
+                        'Address',
+                        booking.address ?? 'Not specified',
+                      ),
                       _buildDetailRow(
                         'Preferred Date',
                         '${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',

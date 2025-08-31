@@ -4,6 +4,7 @@ part 'booking.g.dart';
 
 @JsonSerializable()
 class Booking {
+  @JsonKey(name: '_id')
   final String? id;
   final String userId;
   final String cartId;
@@ -20,12 +21,18 @@ class Booking {
   final String? workerName;
   final DateTime? scheduledDate;
   final String? scheduledTime;
-  final String address;
-  final String duration;
+  final String? address;
+  final String? duration;
   final DateTime? completedAt;
-  final int rescheduleCount;
+  final int? rescheduleCount;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  // Additional fields from backend response
+  final bool? bookingCounted;
+  final List<dynamic>? workerAssignments;
+  final String? refundStatus;
+  final double? cancellationFee;
 
   const Booking({
     this.id,
@@ -44,12 +51,16 @@ class Booking {
     this.workerName,
     this.scheduledDate,
     this.scheduledTime,
-    required this.address,
-    required this.duration,
+    this.address,
+    this.duration,
     this.completedAt,
-    required this.rescheduleCount,
+    this.rescheduleCount,
     required this.createdAt,
     required this.updatedAt,
+    this.bookingCounted,
+    this.workerAssignments,
+    this.refundStatus,
+    this.cancellationFee,
   });
 
   factory Booking.fromJson(Map<String, dynamic> json) =>
@@ -79,6 +90,10 @@ class Booking {
     int? rescheduleCount,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? bookingCounted,
+    List<dynamic>? workerAssignments,
+    String? refundStatus,
+    double? cancellationFee,
   }) {
     return Booking(
       id: id ?? this.id,
@@ -103,6 +118,10 @@ class Booking {
       rescheduleCount: rescheduleCount ?? this.rescheduleCount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      bookingCounted: bookingCounted ?? this.bookingCounted,
+      workerAssignments: workerAssignments ?? this.workerAssignments,
+      refundStatus: refundStatus ?? this.refundStatus,
+      cancellationFee: cancellationFee ?? this.cancellationFee,
     );
   }
 }
@@ -110,7 +129,8 @@ class Booking {
 @JsonSerializable()
 class BookingService {
   final String serviceId;
-  final String? packageId;
+  final dynamic
+  packageId; // Changed from String? to dynamic to handle object structure
   final int quantity;
   final Map<String, dynamic>? customizations;
   final double price;
@@ -159,9 +179,28 @@ class BookingService {
       _$BookingServiceFromJson(json);
   Map<String, dynamic> toJson() => _$BookingServiceToJson(this);
 
+  /// Get package ID as string, handling both string and object formats
+  String? get packageIdString {
+    if (packageId == null) return null;
+    if (packageId is String) return packageId as String;
+    if (packageId is Map<String, dynamic>) {
+      return packageId['_id'] as String?;
+    }
+    return null;
+  }
+
+  /// Get package name if available
+  String? get packageName {
+    if (packageId == null) return null;
+    if (packageId is Map<String, dynamic>) {
+      return packageId['name'] as String?;
+    }
+    return null;
+  }
+
   BookingService copyWith({
     String? serviceId,
-    String? packageId,
+    dynamic packageId, // Changed from String? to dynamic
     int? quantity,
     Map<String, dynamic>? customizations,
     double? price,
