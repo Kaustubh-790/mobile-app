@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:dio/dio.dart';
 import '../api/api_client.dart';
 import '../models/user.dart' as app_user;
 import '../models/user.dart';
@@ -131,6 +132,7 @@ class PhoneAuthService {
         'message': 'Phone authentication successful',
         'user': response['user'],
         'firebaseToken': idToken,
+        'actionRequired': response['actionRequired'] ?? 'PROCEED',
         'requiresProfileCompletion':
             response['requiresProfileCompletion'] ?? false,
       };
@@ -157,94 +159,6 @@ class PhoneAuthService {
   }
 
   /// Handle backend synchronization for phone authentication
-  // Future<Map<String, dynamic>> _handleBackendSync(
-  //   firebase_auth.User user,
-  //   String idToken,
-  // ) async {
-  //   try {
-  //     final phone = user.phoneNumber ?? '';
-  //     if (phone.isEmpty) {
-  //       throw Exception('Phone number not available from Firebase');
-  //     }
-
-  //     // Call backend phone login endpoint
-  //     final response = await ApiClient.dio.post(
-  //       '/auth/phone-login',
-  //       data: {'phone': phone, 'firebaseUid': user.uid},
-  //     );
-
-  //     print('PhoneAuthService: Backend response: ${response.data}');
-  //     print('PhoneAuthService: Response type: ${response.data.runtimeType}');
-
-  //     // Handle different response structures
-  //     dynamic userData;
-  //     if (response.data['user'] != null) {
-  //       userData = response.data['user'];
-  //     } else if (response.data is List) {
-  //       // If response is a list, take the first item
-  //       userData = response.data.isNotEmpty ? response.data.first : null;
-  //     } else {
-  //       // If response is the user object directly
-  //       userData = response.data;
-  //     }
-
-  //     if (userData != null) {
-  //       try {
-  //         // Ensure userData is a Map
-  //         if (userData is Map<String, dynamic>) {
-  //           return {
-  //             'user': app_user.User.fromJson(userData),
-  //             'requiresProfileCompletion':
-  //                 !(userData['profileCompleted'] ?? false),
-  //           };
-  //         } else {
-  //           print(
-  //             'PhoneAuthService: Unexpected userData type: ${userData.runtimeType}',
-  //           );
-  //           throw Exception('Invalid user data format');
-  //         }
-  //       } catch (parseError) {
-  //         print('PhoneAuthService: User data parsing error: $parseError');
-  //         print('PhoneAuthService: Raw user data: $userData');
-  //         // Fall back to creating a basic user object
-  //         return {
-  //           'user': app_user.User(
-  //             id: user.uid,
-  //             name: 'User-${user.uid.substring(0, 6)}',
-  //             email: null,
-  //             phone: phone,
-  //             firebaseUid: user.uid,
-  //             profileCompleted: false,
-  //             role: 'user',
-  //           ),
-  //           'requiresProfileCompletion': true,
-  //         };
-  //       }
-  //     } else {
-  //       throw Exception(
-  //         'Backend sync failed: ${response.data['message'] ?? 'No user data received'}',
-  //       );
-  //     }
-  //   } catch (e) {
-  //     print('PhoneAuthService: Backend sync error: $e');
-  //     // If backend sync fails, create a basic user object
-  //     final phone = user.phoneNumber ?? '';
-  //     return {
-  //       'user': app_user.User(
-  //         id: user.uid,
-  //         name: 'User-${user.uid.substring(0, 6)}',
-  //         email: null,
-  //         phone: phone,
-  //         firebaseUid: user.uid,
-  //         profileCompleted: false,
-  //         role: 'user',
-  //       ),
-  //       'requiresProfileCompletion': true,
-  //     };
-  //   }
-  // }
-
-  /// Handle backend synchronization for phone authentication
   Future<Map<String, dynamic>> _handleBackendSync(
     firebase_auth.User user,
     String idToken,
@@ -261,6 +175,7 @@ class PhoneAuthService {
       final response = await ApiClient.dio.post(
         '/auth/phone-login',
         data: {'phone': phone, 'firebaseUid': user.uid},
+        options: Options(headers: {'X-Platform': 'mobile'}),
       );
 
       print('PhoneAuthService: Backend response: ${response.data}');
@@ -336,6 +251,7 @@ class PhoneAuthService {
 
             return {
               'user': userObject,
+              'actionRequired': response.data['action_required'] ?? 'PROCEED',
               'requiresProfileCompletion':
                   !(userMap['profileCompleted'] ?? false),
             };
@@ -359,6 +275,7 @@ class PhoneAuthService {
                 numberOfBookings: userMap['numberOfBookings'] ?? 0,
                 hasFirstBooking: userMap['hasFirstBooking'] ?? false,
               ),
+              'actionRequired': response.data['action_required'] ?? 'PROCEED',
               'requiresProfileCompletion':
                   !(userMap['profileCompleted'] ?? false),
             };
@@ -408,6 +325,7 @@ class PhoneAuthService {
 
             return {
               'user': userObject,
+              'actionRequired': response.data['action_required'] ?? 'PROCEED',
               'requiresProfileCompletion':
                   !(userMap['profileCompleted'] ?? false),
             };
@@ -431,6 +349,7 @@ class PhoneAuthService {
                 numberOfBookings: userMap['numberOfBookings'] ?? 0,
                 hasFirstBooking: userMap['hasFirstBooking'] ?? false,
               ),
+              'actionRequired': response.data['action_required'] ?? 'PROCEED',
               'requiresProfileCompletion':
                   !(userMap['profileCompleted'] ?? false),
             };
@@ -458,6 +377,7 @@ class PhoneAuthService {
           numberOfBookings: 0,
           hasFirstBooking: false,
         ),
+        'actionRequired': 'ONBOARDING',
         'requiresProfileCompletion': true,
       };
     }

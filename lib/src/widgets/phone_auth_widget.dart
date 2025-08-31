@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/phone_auth_service.dart';
+import '../screens/auth/onboarding_screen.dart';
 
 class PhoneAuthWidget extends StatefulWidget {
   final VoidCallback? onSuccess;
@@ -87,14 +88,26 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
       final result = await _phoneAuthService.verifyOTP(otp);
 
       if (result['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Phone authentication successful!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        final actionRequired = result['actionRequired'] ?? 'PROCEED';
 
-        widget.onSuccess?.call();
+        if (actionRequired == 'ONBOARDING') {
+          // Navigate to onboarding screen
+          final user = result['user'];
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => OnboardingScreen(user: user),
+            ),
+          );
+        } else {
+          // Navigate to home screen
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Phone authentication successful!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          widget.onSuccess?.call();
+        }
       }
     } catch (e) {
       setState(() {
