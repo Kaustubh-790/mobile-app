@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import 'my_profile.dart';
 import 'contact_us.dart';
+import '../about/about_us.dart'; // Add this import
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -39,6 +40,19 @@ class SettingsScreen extends StatelessWidget {
 
           // Support Section
           _buildSectionHeader('Support'),
+          _buildSettingsTile(
+            context,
+            icon: Icons.info_outline,
+            title: 'About Us',
+            subtitle: 'Learn more about our company',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AboutUsScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 8),
           _buildSettingsTile(
             context,
             icon: Icons.contact_support,

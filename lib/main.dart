@@ -14,6 +14,7 @@ import 'src/config/firebase_config.dart';
 import 'src/screens/checkout/checkout_screen.dart';
 import 'src/screens/my_bookings/my_bookings_screen.dart';
 import 'src/screens/payment/payment_screen.dart';
+import 'src/screens/about/about_us.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +73,7 @@ class MyApp extends StatelessWidget {
               fromBookings: args['fromBookings'] ?? false,
             );
           },
+          '/about-us': (context) => const AboutUsScreen(),
         },
       ),
     );
