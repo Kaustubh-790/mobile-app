@@ -4,6 +4,8 @@ import '../models/user.dart';
 import '../api/auth_service.dart';
 import '../api/api_client.dart';
 import '../services/firebase_auth_service.dart';
+import '../services/phone_auth_service.dart';
+import 'package:dio/dio.dart';
 
 class AuthProvider extends ChangeNotifier {
   User? _currentUser;
@@ -11,6 +13,7 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   final FirebaseAuthService _firebaseAuth = FirebaseAuthService();
+  final PhoneAuthService _phoneAuthService = PhoneAuthService();
 
   // Getters
   User? get currentUser => _currentUser;
@@ -121,6 +124,84 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Login with phone number
+  Future<bool> loginWithPhone(String phoneNumber) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final result = await _phoneAuthService.sendOTP(phoneNumber);
+
+      if (result['success'] == true) {
+        notifyListeners();
+        return true;
+      } else {
+        _setError('Failed to send OTP');
+        return false;
+      }
+    } catch (e) {
+      _setError('Phone login failed: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Verify OTP for phone authentication
+  Future<bool> verifyPhoneOTP(String otp) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final result = await _phoneAuthService.verifyOTP(otp);
+
+      if (result['success'] == true) {
+        final user = result['user'] as User;
+        final firebaseToken = result['firebaseToken'] as String;
+
+        // Save user and token
+        _currentUser = user;
+        _authToken = firebaseToken;
+        await _saveTokenToStorage(_authToken!);
+        ApiClient().setAuthToken(_authToken!);
+
+        notifyListeners();
+        return true;
+      } else {
+        _setError('OTP verification failed');
+        return false;
+      }
+    } catch (e) {
+      _setError('OTP verification failed: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Resend OTP for phone authentication
+  Future<bool> resendPhoneOTP(String phoneNumber) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final result = await _phoneAuthService.resendOTP(phoneNumber);
+
+      if (result['success'] == true) {
+        notifyListeners();
+        return true;
+      } else {
+        _setError('Failed to resend OTP');
+        return false;
+      }
+    } catch (e) {
+      _setError('Failed to resend OTP: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   /// Login with Google - improved version
   Future<bool> loginWithGoogle() async {
     try {
@@ -198,68 +279,81 @@ class AuthProvider extends ChangeNotifier {
         id: userData['id']?.toString() ?? '',
         name: userData['name']?.toString() ?? 'User',
         email: userData['email']?.toString() ?? '',
-        role: userData['role']?.toString() ?? 'user',
+        phone: userData['phone']?.toString(),
         firebaseUid: userData['firebaseUid']?.toString(),
         profilePic: userData['profilePic']?.toString(),
-        profileCompleted: userData['profileCompleted'] as bool? ?? false,
-        hasFirstBooking: userData['hasFirstBooking'] as bool? ?? false,
-        numberOfBookings: userData['numberOfBookings'] as int? ?? 0,
+        numberOfBookings: userData['numberOfBookings'] ?? 0,
+        hasFirstBooking: userData['hasFirstBooking'] ?? false,
+        profileCompleted: userData['profileCompleted'] ?? false,
+        role: userData['role']?.toString() ?? 'user',
+        address: userData['address']?.toString(),
+        city: userData['city']?.toString(),
+        state: userData['state']?.toString(),
+        zipCode: userData['zipCode']?.toString(),
+        country: userData['country']?.toString(),
+        dateOfBirth: userData['dateOfBirth']?.toString(),
+        gender: userData['gender']?.toString(),
+        createdAt: userData['createdAt'] != null
+            ? DateTime.parse(userData['createdAt'].toString())
+            : null,
+        updatedAt: userData['updatedAt'] != null
+            ? DateTime.parse(userData['updatedAt'].toString())
+            : null,
       );
     } else {
-      throw Exception('Invalid user data format: ${userData.runtimeType}');
-    }
-  }
-
-  /// Manual backend sync when automatic sync fails
-  Future<User?> _manualBackendSync(User localUser, String firebaseToken) async {
-    try {
-      print('AuthProvider: Attempting manual backend sync...');
-
-      // Retry Firebase auth to get proper UID
-      final retryUid = await _firebaseAuth.retryFirebaseAuth();
-      if (retryUid != null) {
-        print('AuthProvider: Retry successful, using Firebase UID: $retryUid');
-
-        // Update local user with proper Firebase UID
-        final updatedUser = User(
-          id: localUser.id,
-          name: localUser.name,
-          email: localUser.email,
-          role: localUser.role,
-          firebaseUid: retryUid, // Use the proper Firebase UID
-          profilePic: localUser.profilePic,
-          profileCompleted: localUser.profileCompleted,
-          hasFirstBooking: localUser.hasFirstBooking,
-          numberOfBookings: localUser.numberOfBookings,
-        );
-
-        // Try backend sync with proper UID
-        final syncResult = await AuthService().googleLogin(firebaseToken);
-        if (syncResult['user'] != null) {
-          return User.fromJson(syncResult['user']);
-        }
-      }
-
-      return null;
-    } catch (e) {
-      print('AuthProvider: Manual backend sync failed: $e');
-      return null;
+      throw Exception('Invalid user data format');
     }
   }
 
   /// Create user from Firebase data
   User _createUserFromFirebase() {
+    final firebaseUser = _firebaseAuth.currentFirebaseUser;
+    if (firebaseUser == null) {
+      throw Exception('No Firebase user available');
+    }
+
     return User(
-      id: _firebaseAuth.currentFirebaseUser?.uid ?? '',
-      name: _firebaseAuth.currentUserDisplayName ?? 'User',
-      email: _firebaseAuth.currentUserEmail ?? '',
-      role: 'user',
-      firebaseUid: _firebaseAuth.currentFirebaseUser?.uid,
-      profilePic: _firebaseAuth.currentUserPhotoURL,
-      profileCompleted: false,
-      hasFirstBooking: false,
+      id: firebaseUser.uid,
+      name: firebaseUser.displayName ?? 'User',
+      email: firebaseUser.email,
+      phone: firebaseUser.phoneNumber,
+      firebaseUid: firebaseUser.uid,
+      profilePic: firebaseUser.photoURL,
       numberOfBookings: 0,
+      hasFirstBooking: false,
+      profileCompleted: false,
+      role: 'user',
     );
+  }
+
+  /// Manual backend sync for Google login
+  Future<User?> _manualBackendSync(User user, String firebaseToken) async {
+    try {
+      print('AuthProvider: Attempting manual backend sync...');
+
+      final dio = Dio();
+      dio.options.baseUrl = 'https://kariighar.onrender.com/api';
+
+      final response = await dio.post(
+        '/auth/google-login',
+        data: {
+          'firebaseUid': user.firebaseUid,
+          'name': user.name,
+          'email': user.email,
+        },
+      );
+
+      if (response.data['user'] != null) {
+        print('AuthProvider: Manual backend sync successful!');
+        return User.fromJson(response.data['user']);
+      } else {
+        print('AuthProvider: Manual backend sync failed - no user data');
+        return null;
+      }
+    } catch (e) {
+      print('AuthProvider: Manual backend sync error: $e');
+      return null;
+    }
   }
 
   /// Register new user
@@ -303,22 +397,15 @@ class AuthProvider extends ChangeNotifier {
       // Sign out from Firebase
       await _firebaseAuth.signOut();
 
-      // Call logout on backend
-      try {
-        await AuthService().logout();
-      } catch (e) {
-        print('Backend logout failed: $e');
-        // Continue with local logout even if backend fails
-      }
-
-      // Clear local state
+      // Clear stored data
       await _clearStoredData();
+
+      // Clear phone auth data
+      _phoneAuthService.clearVerificationData();
 
       notifyListeners();
     } catch (e) {
-      // Even if logout fails, clear local state
-      await _clearStoredData();
-      notifyListeners();
+      _setError('Logout failed: $e');
     } finally {
       _setLoading(false);
     }
@@ -390,11 +477,9 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Test and debug Google login flow
-  Future<Map<String, dynamic>> debugGoogleLogin() async {
+  /// Debug method for testing authentication flow
+  Future<Map<String, dynamic>> debugAuthFlow() async {
     try {
-      print('AuthProvider: Starting debug Google login...');
-
       final debugResult = <String, dynamic>{};
 
       // Step 1: Test Firebase connection
