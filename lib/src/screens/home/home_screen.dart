@@ -7,6 +7,8 @@ import '../../providers/cart_provider.dart';
 import '../../widgets/popular_services_section.dart';
 import '../cart/cart_screen.dart';
 import '../settings/contact_us.dart';
+import '../settings/my_profile.dart';
+import '../settings/settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -76,6 +78,30 @@ class HomeScreen extends StatelessWidget {
               );
             },
             tooltip: 'Contact Us (Test)',
+          ),
+          // Settings Icon
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+            tooltip: 'Settings',
+          ),
+          // Profile Icon
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MyProfileScreen(),
+                ),
+              );
+            },
+            tooltip: 'My Profile',
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -154,6 +180,35 @@ class HomeScreen extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 16,
                             color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MyProfileScreen(),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.person, color: Colors.white),
+                            label: const Text(
+                              'View Profile',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.white.withOpacity(0.2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -265,10 +320,10 @@ class HomeScreen extends StatelessWidget {
                             icon: Icons.person,
                             title: 'Profile',
                             onTap: () {
-                              // TODO: Navigate to profile screen
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Profile feature coming soon!'),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MyProfileScreen(),
                                 ),
                               );
                             },
@@ -276,7 +331,19 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Container(), // Empty space to maintain layout
+                          child: _buildQuickActionCard(
+                            context,
+                            icon: Icons.settings,
+                            title: 'Settings',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SettingsScreen(),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ],
                     ),

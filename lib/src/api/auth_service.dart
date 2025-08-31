@@ -103,20 +103,72 @@ class AuthService {
     }
   }
 
-  /// Get user profile
+  /// Get user profile by Firebase UID
   Future<User> getProfile() async {
     try {
-      final response = await ApiClient.dio.get('/auth/profile');
-
-      if (response.data['success'] == true) {
-        return User.fromJson(response.data['user']);
-      } else {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          message: response.data['error'] ?? 'Failed to get profile',
-        );
+      // Get the current Firebase UID from the auth token or stored user
+      final firebaseUid = await _getCurrentFirebaseUid();
+      if (firebaseUid == null) {
+        throw Exception('No Firebase UID available');
       }
+
+      print('AuthService: Getting profile for Firebase UID: $firebaseUid');
+      print('AuthService: Calling endpoint: /users/firebase/$firebaseUid');
+
+      final response = await ApiClient.dio.get('/users/firebase/$firebaseUid');
+
+      print('AuthService: Response received - Status: ${response.statusCode}');
+      print('AuthService: Response data type: ${response.data.runtimeType}');
+      print(
+        'AuthService: Response data keys: ${response.data is Map ? (response.data as Map).keys.toList() : 'Not a Map'}',
+      );
+
+      // Backend returns the user object directly at the root level
+      // No need to check for 'success' field or nested 'user' key
+      return User.fromJson(response.data);
+    } on DioException catch (e) {
+      throw _handleDioError(e, 'Failed to get profile');
+    } catch (e) {
+      throw Exception('Unexpected error getting profile: $e');
+    }
+  }
+
+  /// Helper method to get current Firebase UID
+  Future<String?> _getCurrentFirebaseUid() async {
+    try {
+      // Try to get from Firebase Auth first
+      final firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null) {
+        return firebaseUser.uid;
+      }
+
+      // Fallback: try to extract from auth token if it's the Firebase UID
+      // Since ApiClient doesn't expose the token, we'll rely on Firebase Auth
+      return null;
+    } catch (e) {
+      print('Error getting Firebase UID: $e');
+      return null;
+    }
+  }
+
+  /// Get user profile by specific Firebase UID
+  Future<User> getProfileByFirebaseUid(String firebaseUid) async {
+    try {
+      final response = await ApiClient.dio.get('/users/firebase/$firebaseUid');
+
+      print(
+        'AuthService: getProfileByFirebaseUid - Response received - Status: ${response.statusCode}',
+      );
+      print(
+        'AuthService: getProfileByFirebaseUid - Response data type: ${response.data.runtimeType}',
+      );
+      print(
+        'AuthService: getProfileByFirebaseUid - Response data keys: ${response.data is Map ? (response.data as Map).keys.toList() : 'Not a Map'}',
+      );
+
+      // Backend returns the user object directly at the root level
+      // No need to check for 'success' field or nested 'user' key
+      return User.fromJson(response.data);
     } on DioException catch (e) {
       throw _handleDioError(e, 'Failed to get profile');
     } catch (e) {
@@ -145,6 +197,33 @@ class AuthService {
       throw _handleDioError(e, 'Failed to update profile');
     } catch (e) {
       throw Exception('Unexpected error updating profile: $e');
+    }
+  }
+
+  /// Complete user profile by Firebase UID
+  Future<User> completeProfile(
+    String firebaseUid,
+    Map<String, dynamic> profileData,
+  ) async {
+    try {
+      final response = await ApiClient.dio.put(
+        '/auth/profile-completion/$firebaseUid',
+        data: profileData,
+      );
+
+      if (response.data['success'] == true) {
+        return User.fromJson(response.data['user']);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message: response.data['error'] ?? 'Failed to complete profile',
+        );
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e, 'Failed to complete profile');
+    } catch (e) {
+      throw Exception('Unexpected error completing profile: $e');
     }
   }
 

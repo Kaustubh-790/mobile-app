@@ -39,10 +39,18 @@ class AuthProvider extends ChangeNotifier {
           _authToken = idToken;
           ApiClient().setAuthToken(idToken);
 
-          // Try to get user profile from backend
+          // Try to get user profile from backend using Firebase UID
           try {
-            final user = await AuthService().getProfile();
-            _currentUser = user;
+            final firebaseUser = _firebaseAuth.currentFirebaseUser;
+            if (firebaseUser != null) {
+              final user = await AuthService().getProfileByFirebaseUid(
+                firebaseUser.uid,
+              );
+              _currentUser = user;
+            } else {
+              // If no Firebase user, create user from Firebase data
+              _currentUser = _createUserFromFirebase();
+            }
           } catch (e) {
             // If backend fails, create user from Firebase data
             _currentUser = _createUserFromFirebase();
@@ -55,10 +63,11 @@ class AuthProvider extends ChangeNotifier {
           _authToken = savedToken;
           ApiClient().setAuthToken(savedToken);
 
-          // Try to get user profile
+          // Try to get user profile (this is for saved token, might not have Firebase UID)
           try {
-            final user = await AuthService().getProfile();
-            _currentUser = user;
+            // For saved tokens, we can't use Firebase UID, so we'll need to handle this differently
+            // For now, we'll clear the token and let the user re-authenticate
+            await _clearStoredData();
           } catch (e) {
             // Token might be expired, clear it
             await _clearStoredData();
@@ -337,9 +346,19 @@ class AuthProvider extends ChangeNotifier {
     try {
       if (_authToken == null) return;
 
-      final user = await AuthService().getProfile();
-      _currentUser = user;
-      notifyListeners();
+      // Try to get user profile using Firebase UID
+      final firebaseUser = _firebaseAuth.currentFirebaseUser;
+      if (firebaseUser != null) {
+        final user = await AuthService().getProfileByFirebaseUid(
+          firebaseUser.uid,
+        );
+        _currentUser = user;
+        notifyListeners();
+      } else {
+        // If no Firebase user, clear data and let user re-authenticate
+        await _clearStoredData();
+        notifyListeners();
+      }
     } catch (e) {
       // If refresh fails, user might be logged out
       await _clearStoredData();
@@ -353,10 +372,17 @@ class AuthProvider extends ChangeNotifier {
     await _saveTokenToStorage(token);
     ApiClient().setAuthToken(token);
 
-    // Try to get user profile
+    // Try to get user profile using Firebase UID
     try {
-      final user = await AuthService().getProfile();
-      _currentUser = user;
+      final firebaseUser = _firebaseAuth.currentFirebaseUser;
+      if (firebaseUser != null) {
+        final user = await AuthService().getProfileByFirebaseUid(
+          firebaseUser.uid,
+        );
+        _currentUser = user;
+      } else {
+        _setError('No Firebase user available for profile fetch');
+      }
     } catch (e) {
       _setError('Failed to get user profile: $e');
     }
@@ -398,7 +424,9 @@ class AuthProvider extends ChangeNotifier {
         if (loginResult['backendSync'] == true) {
           try {
             ApiClient().setAuthToken(loginResult['firebaseToken']);
-            final backendUser = await AuthService().getProfile();
+            final backendUser = await AuthService().getProfileByFirebaseUid(
+              user.firebaseUid!,
+            );
             debugResult['backend_profile'] = {
               'success': true,
               'user': {
