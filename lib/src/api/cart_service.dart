@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'api_client.dart';
 import '../models/cart_item.dart';
+import '../providers/auth_provider.dart';
 
 class CartService {
   static final ApiClient _apiClient = ApiClient();
@@ -9,6 +10,9 @@ class CartService {
   static Future<Map<String, dynamic>> getCart({String? userId}) async {
     try {
       print('CartService: Fetching cart...');
+
+      // Ensure auth token is set
+      await _ensureAuthToken();
 
       final response = await _apiClient.instance.get('/cart');
 
@@ -69,12 +73,36 @@ class CartService {
             throw Exception(
               'Unable to connect to server. Please try again later.',
             );
+          case DioExceptionType.badResponse:
+            if (e.response?.statusCode == 401) {
+              // Clear invalid token and throw auth error
+              ApiClient().clearAuthToken();
+              throw Exception('Authentication expired. Please log in again.');
+            }
+            break;
           default:
             throw Exception('Network error occurred. Please try again.');
         }
       }
 
       throw Exception('Failed to load cart: $e');
+    }
+  }
+
+  /// Ensure authentication token is set before making API calls
+  static Future<void> _ensureAuthToken() async {
+    try {
+      final authProvider = AuthProvider();
+      if (authProvider.isAuthenticated && authProvider.authToken != null) {
+        _apiClient.setAuthToken(authProvider.authToken!);
+        print('CartService: Auth token set for API calls');
+      } else {
+        print('CartService: Warning - No auth token available');
+        throw Exception('Authentication required. Please log in again.');
+      }
+    } catch (e) {
+      print('CartService: Error setting auth token: $e');
+      throw Exception('Authentication failed. Please log in again.');
     }
   }
 
@@ -91,6 +119,9 @@ class CartService {
       print(
         'CartService: Adding item to cart - serviceId: $serviceId, packageId: $packageId, quantity: $quantity, price: $price',
       );
+
+      // Ensure auth token is set
+      await _ensureAuthToken();
 
       // Prepare request data matching backend expectations
       final requestData = <String, dynamic>{
@@ -187,6 +218,13 @@ class CartService {
             throw Exception(
               'Unable to connect to server. Please try again later.',
             );
+          case DioExceptionType.badResponse:
+            if (e.response?.statusCode == 401) {
+              // Clear invalid token and throw auth error
+              ApiClient().clearAuthToken();
+              throw Exception('Authentication expired. Please log in again.');
+            }
+            break;
           default:
             throw Exception('Network error occurred. Please try again.');
         }
@@ -224,6 +262,9 @@ class CartService {
       print(
         'CartService: Updating cart item - itemId: $itemId, quantity: $quantity',
       );
+
+      // Ensure auth token is set
+      await _ensureAuthToken();
 
       final requestData = {
         'quantity': quantity,
@@ -280,6 +321,13 @@ class CartService {
             throw Exception(
               'Unable to connect to server. Please try again later.',
             );
+          case DioExceptionType.badResponse:
+            if (e.response?.statusCode == 401) {
+              // Clear invalid token and throw auth error
+              ApiClient().clearAuthToken();
+              throw Exception('Authentication expired. Please log in again.');
+            }
+            break;
           default:
             throw Exception('Network error occurred. Please try again.');
         }
@@ -293,6 +341,9 @@ class CartService {
   static Future<void> removeFromCart(String itemId, {String? userId}) async {
     try {
       print('CartService: Removing item from cart - itemId: $itemId');
+
+      // Ensure auth token is set
+      await _ensureAuthToken();
 
       final response = await _apiClient.instance.delete('/cart/remove/$itemId');
 
@@ -323,6 +374,13 @@ class CartService {
             throw Exception(
               'Unable to connect to server. Please try again later.',
             );
+          case DioExceptionType.badResponse:
+            if (e.response?.statusCode == 401) {
+              // Clear invalid token and throw auth error
+              ApiClient().clearAuthToken();
+              throw Exception('Authentication expired. Please log in again.');
+            }
+            break;
           default:
             throw Exception('Network error occurred. Please try again.');
         }
@@ -336,6 +394,9 @@ class CartService {
   static Future<void> clearCart({String? userId}) async {
     try {
       print('CartService: Clearing cart...');
+
+      // Ensure auth token is set
+      await _ensureAuthToken();
 
       final response = await _apiClient.instance.delete('/cart/clear');
 
@@ -366,6 +427,13 @@ class CartService {
             throw Exception(
               'Unable to connect to server. Please try again later.',
             );
+          case DioExceptionType.badResponse:
+            if (e.response?.statusCode == 401) {
+              // Clear invalid token and throw auth error
+              ApiClient().clearAuthToken();
+              throw Exception('Authentication expired. Please log in again.');
+            }
+            break;
           default:
             throw Exception('Network error occurred. Please try again.');
         }

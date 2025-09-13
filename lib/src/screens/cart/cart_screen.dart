@@ -72,16 +72,32 @@ class _CartScreenState extends State<CartScreen> {
                     ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      final currentUser = context
-                          .read<AuthProvider>()
-                          .currentUser;
-                      final userId = currentUser?.id;
-                      cartProvider.fetchCart(userId: userId);
-                    },
-                    child: const Text('Retry'),
-                  ),
+                  // Check if it's an authentication error
+                  if (cartProvider.error!.contains('Session expired') ||
+                      cartProvider.error!.contains('Authentication') ||
+                      cartProvider.error!.contains('log in again'))
+                    ElevatedButton(
+                      onPressed: () {
+                        // Navigate to login screen
+                        Navigator.pushReplacementNamed(context, '/login');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Go to Login'),
+                    )
+                  else
+                    ElevatedButton(
+                      onPressed: () {
+                        final currentUser = context
+                            .read<AuthProvider>()
+                            .currentUser;
+                        final userId = currentUser?.id;
+                        cartProvider.fetchCart(userId: userId);
+                      },
+                      child: const Text('Retry'),
+                    ),
                 ],
               ),
             );

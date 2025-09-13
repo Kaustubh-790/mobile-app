@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/cart_item.dart';
 import '../api/cart_service.dart';
+import 'auth_provider.dart';
 
 class CartProvider extends ChangeNotifier {
   List<CartItem> _cartItems = [];
@@ -23,6 +24,12 @@ class CartProvider extends ChangeNotifier {
       _setLoading(true);
       _clearError();
 
+      // Ensure user is authenticated before making cart requests
+      final authProvider = AuthProvider();
+      if (!authProvider.isAuthenticated) {
+        throw Exception('Authentication required. Please log in again.');
+      }
+
       final cartData = await CartService.getCart(userId: userId);
       _cartItems = cartData['items'] as List<CartItem>;
       _cartId = cartData['cartId'] as String?;
@@ -33,7 +40,20 @@ class CartProvider extends ChangeNotifier {
       );
       notifyListeners();
     } catch (e) {
-      _setError('Failed to fetch cart: $e');
+      String errorMessage = 'Failed to fetch cart: $e';
+
+      // Handle authentication errors specifically
+      if (e.toString().contains('Authentication') ||
+          e.toString().contains('401') ||
+          e.toString().contains('expired') ||
+          e.toString().contains('unauthorized')) {
+        errorMessage = 'Session expired. Please log in again.';
+        // Clear authentication state
+        final authProvider = AuthProvider();
+        await authProvider.logout();
+      }
+
+      _setError(errorMessage);
       print('CartProvider: Error fetching cart - $e');
     } finally {
       _setLoading(false);
@@ -74,6 +94,12 @@ class CartProvider extends ChangeNotifier {
       print(
         'CartProvider: serviceId: $serviceId, packageId: $packageId, quantity: $quantity, price: $price',
       );
+
+      // Ensure user is authenticated
+      final authProvider = AuthProvider();
+      if (!authProvider.isAuthenticated) {
+        throw Exception('Authentication required. Please log in again.');
+      }
 
       // Check if item already exists with same serviceId and packageId
       final existingIndex = _cartItems.indexWhere(
@@ -148,7 +174,20 @@ class CartProvider extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      _setError('Failed to add item to cart: $e');
+      String errorMessage = 'Failed to add item to cart: $e';
+
+      // Handle authentication errors specifically
+      if (e.toString().contains('Authentication') ||
+          e.toString().contains('401') ||
+          e.toString().contains('expired') ||
+          e.toString().contains('unauthorized')) {
+        errorMessage = 'Session expired. Please log in again.';
+        // Clear authentication state
+        final authProvider = AuthProvider();
+        await authProvider.logout();
+      }
+
+      _setError(errorMessage);
       print('CartProvider: Error adding item with details - $e');
     } finally {
       _setLoading(false);
