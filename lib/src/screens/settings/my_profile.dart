@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/user.dart';
 import '../../api/auth_service.dart';
+import '../auth/login_screen.dart';
 
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
@@ -13,7 +14,6 @@ class MyProfileScreen extends StatefulWidget {
 
 class _MyProfileScreenState extends State<MyProfileScreen> {
   bool _isLoading = false;
-  String? _error;
   User? _userProfile;
 
   @override
@@ -23,14 +23,18 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   Future<void> _loadUserProfile() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    // If not authenticated, don't load profile
+    if (!authProvider.isAuthenticated) {
+      return;
+    }
+
     setState(() {
       _isLoading = true;
-      _error = null;
     });
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
       // Try to get profile from backend first
       try {
         final user = await AuthService().getProfile();
@@ -69,13 +73,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         });
       } else {
         setState(() {
-          _error = 'No user profile available. Please login again.';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Error loading profile: $e';
         _isLoading = false;
       });
     }
@@ -83,90 +85,137 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Profile'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadUserProfile,
-            tooltip: 'Refresh Profile',
+      body: SafeArea(
+        child: Consumer<AuthProvider>(
+          builder: (context, authProvider, child) {
+            // If not authenticated, show login prompt
+            if (!authProvider.isAuthenticated) {
+              return _buildLoginPrompt(theme);
+            }
+
+            // If loading, show loading indicator
+            if (_isLoading) {
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Loading profile...'),
+                  ],
+                ),
+              );
+            }
+
+            // If no user profile, show login prompt
+            if (_userProfile == null) {
+              return _buildLoginPrompt(theme);
+            }
+
+            // Show profile content
+            return RefreshIndicator(
+              onRefresh: _loadUserProfile,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'My Profile',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.refresh),
+                            onPressed: _loadUserProfile,
+                            tooltip: 'Refresh Profile',
+                          ),
+                        ],
+                      ),
+                    ),
+                    _buildProfileHeader(theme),
+                    const SizedBox(height: 24),
+                    _buildProfileDetails(theme),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginPrompt(ThemeData theme) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 80),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.person_outline,
+              size: 64,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Sign in to view your profile',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Login or create an account to access your profile, manage your information, and track your bookings.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LoginScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.login),
+              label: const Text('Login / Register'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
           ),
         ],
       ),
-      body: RefreshIndicator(onRefresh: _loadUserProfile, child: _buildBody()),
     );
   }
 
-  Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Loading profile...'),
-          ],
-        ),
-      );
-    }
-
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-            const SizedBox(height: 16),
-            Text(
-              _error!,
-              style: const TextStyle(fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadUserProfile,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_userProfile == null) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.person_outline, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'No profile data available',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildProfileHeader(),
-          const SizedBox(height: 24),
-          _buildProfileDetails(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(ThemeData theme) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -176,11 +225,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           children: [
             CircleAvatar(
               radius: 40,
-              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+              backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
               child: Icon(
                 Icons.person,
                 size: 40,
-                color: Theme.of(context).primaryColor,
+                color: theme.colorScheme.primary,
               ),
             ),
             const SizedBox(width: 20),
@@ -207,7 +256,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      color: theme.colorScheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -215,7 +264,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
+                        color: theme.colorScheme.primary,
                       ),
                     ),
                   ),
@@ -228,7 +277,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     );
   }
 
-  Widget _buildProfileDetails() {
+  Widget _buildProfileDetails(ThemeData theme) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -243,24 +292,28 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             ),
             const SizedBox(height: 20),
             _buildProfileField(
+              theme,
               icon: Icons.person,
               label: 'Full Name',
               value: _userProfile!.name ?? 'Not provided',
             ),
             const SizedBox(height: 16),
             _buildProfileField(
+              theme,
               icon: Icons.email,
               label: 'Email Address',
               value: _userProfile!.email ?? 'Not provided',
             ),
             const SizedBox(height: 16),
             _buildProfileField(
+              theme,
               icon: Icons.phone,
               label: 'Phone Number',
               value: _userProfile!.phone ?? 'Not provided',
             ),
             const SizedBox(height: 16),
             _buildProfileField(
+              theme,
               icon: Icons.location_on,
               label: 'Address',
               value: _buildAddressText(),
@@ -271,7 +324,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     );
   }
 
-  Widget _buildProfileField({
+  Widget _buildProfileField(
+    ThemeData theme, {
     required IconData icon,
     required String label,
     required String value,
@@ -282,10 +336,10 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: theme.colorScheme.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: Theme.of(context).primaryColor, size: 20),
+          child: Icon(icon, color: theme.colorScheme.primary, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(

@@ -56,268 +56,283 @@ class _BookingCardState extends State<BookingCard>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final progress = _getCompletionProgress();
     final canCancel = _canCancel();
     final isUnpaid = widget.booking.paymentStatus != 'completed';
+    final statusColor = StatusUtils.getStatusColor(widget.booking.status);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: InkWell(
+        onTap: _toggleExpansion,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
-      ),
-      child: Column(
-        children: [
-          // Booking Header
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                // Top row - Booking ID and Status
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _formatBookingId(widget.booking.id ?? ''),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: StatusUtils.getStatusColor(
-                                widget.booking.status,
-                              ).withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: StatusUtils.getStatusColor(
-                                  widget.booking.status,
-                                ).withOpacity(0.5),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Booking Header
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top row - Booking ID and Price
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _formatBookingId(widget.booking.id ?? ''),
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  StatusUtils.getStatusIcon(
-                                    widget.booking.status,
-                                  ),
-                                  size: 16,
-                                  color: StatusUtils.getStatusColor(
-                                    widget.booking.status,
-                                  ),
+                            const SizedBox(height: 8),
+                            // Status Badge
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusColor.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: statusColor.withOpacity(0.5),
+                                  width: 1,
                                 ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  widget.booking.status.toUpperCase(),
-                                  style: TextStyle(
-                                    color: StatusUtils.getStatusColor(
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    StatusUtils.getStatusIcon(
                                       widget.booking.status,
                                     ),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                                    size: 14,
+                                    color: statusColor,
                                   ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    widget.booking.status.toUpperCase(),
+                                    style: TextStyle(
+                                      color: statusColor,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '₹${widget.booking.totalAmount.toStringAsFixed(2)}',
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                              ],
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                _isExpanded
+                                    ? Icons.keyboard_arrow_down
+                                    : Icons.keyboard_arrow_up,
+                                color: theme.colorScheme.primary,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${progress['completedServices']}/${progress['totalServices']} completed',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 4),
+                          SizedBox(
+                            width: 80,
+                            child: LinearProgressIndicator(
+                              value: progress['percentage']! / 100,
+                              backgroundColor: theme.colorScheme.surface,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                theme.colorScheme.primary,
+                              ),
+                              minHeight: 4,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '₹${widget.booking.totalAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${progress['completedServices']}/${progress['totalServices']} completed',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: 80,
-                          child: LinearProgressIndicator(
-                            value: progress['percentage']! / 100,
-                            backgroundColor: Colors.grey.withOpacity(0.3),
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Color(0xFF8C11FF),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Middle row - Date and Location
-                Row(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.calendar_today,
-                            color: Color(0xFF8C11FF),
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              DateFormatter.formatDateTime(
-                                widget.booking.bookingDate,
-                                widget.booking.bookingTime,
-                              ),
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on,
-                            color: Colors.red,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              widget.booking.customerInfo.address,
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 14,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // Bottom row - Action Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _toggleExpansion,
-                        icon: Icon(
-                          _isExpanded ? Icons.visibility_off : Icons.visibility,
-                          size: 18,
-                        ),
-                        label: Text(
-                          _isExpanded ? 'Hide Details' : 'View Details',
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF8C11FF),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    if (isUnpaid && widget.booking.status != 'cancelled') ...[
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Navigate to payment screen
-                            Navigator.pushNamed(
-                              context,
-                              '/payment',
-                              arguments: {
-                                'bookingId': widget.booking.id,
-                                'cartId': widget.booking.cartId,
-                                'amount': widget.booking.totalAmount,
-                                'fromBookings': true,
-                              },
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text('Pay Now'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
                     ],
-                    if (canCancel)
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => CancelBookingModal(
-                              booking: widget.booking,
-                              onCancelled: widget.onRefresh,
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.cancel, size: 18),
-                        label: const Text('Cancel'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  // Date and Time
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormatter.formatDate(widget.booking.bookingDate),
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '|',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.3),
                         ),
                       ),
-                  ],
-                ),
-              ],
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.access_time,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.booking.bookingTime,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Address
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: 18,
+                        color: theme.colorScheme.error,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          widget.booking.address ?? widget.booking.customerInfo.address,
+                          style: theme.textTheme.bodyMedium,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Payment Method
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.payment,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Payment Method: ',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      Text(
+                        widget.booking.paymentMethod ?? 'Card',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Action Buttons
+                  Row(
+                    children: [
+                      if (canCancel && widget.booking.status != 'completed')
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => CancelBookingModal(
+                                  booking: widget.booking,
+                                  onCancelled: widget.onRefresh,
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.cancel_outlined, size: 18),
+                            label: const Text('Cancel'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: theme.colorScheme.error,
+                              side: BorderSide(
+                                color: theme.colorScheme.error,
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      if (canCancel &&
+                          widget.booking.status != 'completed' &&
+                          isUnpaid)
+                        const SizedBox(width: 12),
+                      if (isUnpaid && widget.booking.status != 'cancelled')
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/payment',
+                                arguments: {
+                                  'bookingId': widget.booking.id,
+                                  'cartId': widget.booking.cartId,
+                                  'amount': widget.booking.totalAmount,
+                                  'fromBookings': true,
+                                },
+                              );
+                            },
+                            icon: const Icon(Icons.payment, size: 18),
+                            label: const Text('Pay Now'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: theme.colorScheme.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          // Expandable Services Section
-          AnimatedBuilder(
-            animation: _heightAnimation,
-            builder: (context, child) {
-              return SizeTransition(
-                sizeFactor: _heightAnimation,
-                child: _isExpanded
-                    ? ServiceDetailsSection(
-                        booking: widget.booking,
-                        onRefresh: widget.onRefresh,
-                      )
-                    : const SizedBox.shrink(),
-              );
-            },
-          ),
-        ],
+            // Expandable Services Section
+            AnimatedBuilder(
+              animation: _heightAnimation,
+              builder: (context, child) {
+                return ClipRect(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    heightFactor: _heightAnimation.value,
+                    child: _isExpanded
+                        ? ServiceDetailsSection(
+                            booking: widget.booking,
+                            onRefresh: widget.onRefresh,
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -10,114 +10,140 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Profile Section
-          _buildSectionHeader('Account'),
-          _buildSettingsTile(
-            context,
-            icon: Icons.person,
-            title: 'My Profile',
-            subtitle: 'View and manage your profile information',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MyProfileScreen(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-
-          // Support Section
-          _buildSectionHeader('Support'),
-          _buildSettingsTile(
-            context,
-            icon: Icons.info_outline,
-            title: 'About Us',
-            subtitle: 'Learn more about our company',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AboutUsScreen()),
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-          _buildSettingsTile(
-            context,
-            icon: Icons.contact_support,
-            title: 'Contact Us',
-            subtitle: 'Get help and support',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ContactUsScreen(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-
-          // Account Actions Section
-          _buildSectionHeader('Account Actions'),
-          _buildSettingsTile(
-            context,
-            icon: Icons.logout,
-            title: 'Logout',
-            subtitle: 'Sign out of your account',
-            onTap: () async {
-              // Show confirmation dialog
-              final shouldLogout = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Logout'),
-                  content: const Text('Are you sure you want to logout?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text('Cancel'),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Text(
+                    'Settings',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Logout'),
-                    ),
-                  ],
-                ),
-              );
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  // Profile Section
+                  _buildSectionHeader('Account'),
+                  _buildSettingsTile(
+                    context,
+                    icon: Icons.person,
+                    title: 'My Profile',
+                    subtitle: 'View and manage your profile information',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MyProfileScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
 
-              if (shouldLogout == true) {
-                final authProvider = context.read<AuthProvider>();
-                await authProvider.logout();
-              }
-            },
-          ),
+                  // Support Section
+                  _buildSectionHeader('Support'),
+                  _buildSettingsTile(
+                    context,
+                    icon: Icons.info_outline,
+                    title: 'About Us',
+                    subtitle: 'Learn more about our company',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AboutUsScreen()),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _buildSettingsTile(
+                    context,
+                    icon: Icons.contact_support,
+                    title: 'Contact Us',
+                    subtitle: 'Get help and support',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ContactUsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
 
-          const SizedBox(height: 24),
+                  // Account Actions Section - Only show if authenticated
+                  Consumer<AuthProvider>(
+                    builder: (context, authProvider, child) {
+                      if (authProvider.isAuthenticated) {
+                        return Column(
+                          children: [
+                            _buildSectionHeader('Account Actions'),
+                            _buildSettingsTile(
+                              context,
+                              icon: Icons.logout,
+                              title: 'Logout',
+                              subtitle: 'Sign out of your account',
+                              onTap: () async {
+                                // Show confirmation dialog
+                                final shouldLogout = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Logout'),
+                                    content: const Text('Are you sure you want to logout?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () => Navigator.of(context).pop(true),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                        child: const Text('Logout'),
+                                      ),
+                                    ],
+                                  ),
+                                );
 
-          // App Info Section
-          _buildSectionHeader('App Information'),
-          _buildInfoTile(icon: Icons.info, title: 'Version', subtitle: '1.0.0'),
-          _buildInfoTile(
-            icon: Icons.build,
-            title: 'Build',
-            subtitle: '2024.1.0',
-          ),
-        ],
+                                if (shouldLogout == true) {
+                                  await authProvider.logout();
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+
+                  // App Info Section
+                  _buildSectionHeader('App Information'),
+                  _buildInfoTile(icon: Icons.info, title: 'Version', subtitle: '1.0.0'),
+                  _buildInfoTile(
+                    icon: Icons.build,
+                    title: 'Build',
+                    subtitle: '2024.1.0',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

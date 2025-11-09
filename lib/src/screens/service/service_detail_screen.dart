@@ -61,19 +61,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
             'Debug: code type: ${firstPackage['code']?.runtimeType}, value: ${firstPackage['code']}',
           );
 
-          // Extract service name from package name or use a more descriptive title
-          String serviceName = firstPackage['name'] ?? 'Unknown Service';
-          String serviceDescription = 'Professional service packages available';
-
-          // Try to extract service type from the package name for better description
-          if (serviceName.toLowerCase().contains('labour')) {
-            serviceDescription =
-                'Professional labour and construction services';
-          } else if (serviceName.toLowerCase().contains('package')) {
-            serviceDescription =
-                'Comprehensive service packages tailored to your needs';
-          }
-
           service = ServiceModel(
             id: firstPackage['serviceId']?.toString() ?? '',
             title: firstPackage['name'] ?? 'Unknown Service',
@@ -498,6 +485,35 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   }
 
   void _addToCart(dynamic package) {
+    // Check if user is authenticated
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isAuthenticated) {
+      // Show login prompt
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Sign in Required'),
+          content: const Text(
+            'Please sign in to add items to your cart. Create an account or login to continue.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushNamed(context, '/login');
+              },
+              child: const Text('Login / Register'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     try {
       final cartProvider = context.read<CartProvider>();
       final serviceId = package['serviceId']?.toString() ?? '';
@@ -542,6 +558,10 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
           SnackBar(
             content: Text('Added $selectedQuantity item(s) to cart'),
             backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -550,18 +570,55 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
           const SnackBar(
             content: Text('Error: Service ID not found'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+            ),
             duration: Duration(seconds: 2),
           ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error adding to cart: $e'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      // Check if it's an authentication error
+      if (e.toString().contains('Authentication') ||
+          e.toString().contains('401') ||
+          e.toString().contains('expired') ||
+          e.toString().contains('unauthorized')) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Session Expired'),
+            content: const Text(
+              'Your session has expired. Please login again to continue.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.pushNamed(context, '/login');
+                },
+                child: const Text('Login'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error adding to cart: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 }

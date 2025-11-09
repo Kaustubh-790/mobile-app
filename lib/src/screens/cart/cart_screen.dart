@@ -4,6 +4,7 @@ import '../../providers/cart_provider.dart';
 import '../../models/cart_item.dart';
 import '../../providers/auth_provider.dart';
 import '../checkout/checkout_screen.dart';
+import '../search/search_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -26,132 +27,273 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Shopping Cart'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        actions: [
-          Consumer<CartProvider>(
-            builder: (context, cartProvider, child) {
-              if (cartProvider.cartItems.isNotEmpty) {
-                return IconButton(
-                  icon: const Icon(Icons.delete_sweep),
-                  onPressed: () => _showClearCartDialog(context, cartProvider),
-                  tooltip: 'Clear Cart',
+      body: SafeArea(
+        child: Consumer<AuthProvider>(
+          builder: (context, authProvider, child) {
+            // If not authenticated, show empty cart with browse services message
+            if (!authProvider.isAuthenticated) {
+              return _buildEmptyCart(theme, showLoginPrompt: false);
+            }
+
+            return Consumer<CartProvider>(
+              builder: (context, cartProvider, child) {
+                if (cartProvider.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                // Check if error is due to authentication
+                if (cartProvider.error != null) {
+                  final isAuthError = cartProvider.error!.contains('Session expired') ||
+                      cartProvider.error!.contains('Authentication') ||
+                      cartProvider.error!.contains('log in again') ||
+                      cartProvider.error!.contains('401') ||
+                      cartProvider.error!.contains('unauthorized');
+                  
+                  if (isAuthError) {
+                    return _buildLoginPrompt(theme);
+                  }
+                  
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error loading cart',
+                          style: theme.textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            cartProvider.error!,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () {
+                            final currentUser = context.read<AuthProvider>().currentUser;
+                            final userId = currentUser?.id;
+                            cartProvider.fetchCart(userId: userId);
+                          },
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (cartProvider.cartItems.isEmpty) {
+                  return _buildEmptyCart(theme, showLoginPrompt: false);
+                }
+
+                return Column(
+                  children: [
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Shopping Cart',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (cartProvider.cartItems.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(Icons.delete_sweep),
+                              onPressed: () => _showClearCartDialog(context, cartProvider),
+                              tooltip: 'Clear Cart',
+                            ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: cartProvider.cartItems.length,
+                        itemBuilder: (context, index) {
+                          final item = cartProvider.cartItems[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _buildCartItemCard(context, item, cartProvider),
+                          );
+                        },
+                      ),
+                    ),
+                    _buildBottomSection(context, cartProvider),
+                  ],
                 );
-              }
-              return const SizedBox.shrink();
-            },
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginPrompt(ThemeData theme) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 80),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.shopping_cart_outlined,
+              size: 64,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Sign in to view your cart',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Login or create an account to add items to your cart and manage your bookings.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pushNamed(context, '/login');
+              },
+              icon: const Icon(Icons.login),
+              label: const Text('Login / Register'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
           ),
         ],
       ),
-      body: Consumer<CartProvider>(
-        builder: (context, cartProvider, child) {
-          if (cartProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    );
+  }
 
-          if (cartProvider.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading cart',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    cartProvider.error!,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 16),
-                  // Check if it's an authentication error
-                  if (cartProvider.error!.contains('Session expired') ||
-                      cartProvider.error!.contains('Authentication') ||
-                      cartProvider.error!.contains('log in again'))
-                    ElevatedButton(
-                      onPressed: () {
-                        // Navigate to login screen
-                        Navigator.pushReplacementNamed(context, '/login');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Go to Login'),
-                    )
-                  else
-                    ElevatedButton(
-                      onPressed: () {
-                        final currentUser = context
-                            .read<AuthProvider>()
-                            .currentUser;
-                        final userId = currentUser?.id;
-                        cartProvider.fetchCart(userId: userId);
-                      },
-                      child: const Text('Retry'),
-                    ),
-                ],
-              ),
-            );
-          }
-
-          if (cartProvider.cartItems.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_cart_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Your cart is empty',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Add some services to get started',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Browse Services'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return Column(
+  Widget _buildEmptyCart(ThemeData theme, {bool showLoginPrompt = false}) {
+    return Column(
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: cartProvider.cartItems.length,
-                  itemBuilder: (context, index) {
-                    final item = cartProvider.cartItems[index];
-                    return _buildCartItemCard(context, item, cartProvider);
-                  },
+              Text(
+                'Shopping Cart',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              _buildBottomSection(context, cartProvider),
             ],
-          );
-        },
-      ),
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.shopping_cart_outlined,
+                      size: 64,
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    showLoginPrompt ? 'Sign in to view your cart' : 'No items in cart',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    showLoginPrompt 
+                        ? 'Login or create an account to add items to your cart and manage your bookings.'
+                        : 'Browse services to add items to your cart',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  if (showLoginPrompt) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/login');
+                        },
+                        icon: const Icon(Icons.login),
+                        label: const Text('Login / Register'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SearchScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.explore),
+                    label: const Text('Browse Services'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      backgroundColor: showLoginPrompt 
+                          ? theme.colorScheme.surface 
+                          : theme.colorScheme.primary,
+                      foregroundColor: showLoginPrompt 
+                          ? theme.colorScheme.onSurface 
+                          : Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

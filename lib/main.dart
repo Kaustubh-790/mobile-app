@@ -5,7 +5,7 @@ import 'src/providers/services_provider.dart';
 import 'src/providers/cart_provider.dart';
 import 'src/providers/booking_provider.dart';
 import 'src/screens/auth/login_screen.dart';
-import 'src/screens/home/home_screen.dart';
+import 'src/screens/auth/register_screen.dart';
 import 'src/screens/service/service_detail_screen.dart';
 import 'src/screens/settings/contact_us.dart';
 import 'src/screens/settings/my_profile.dart';
@@ -15,6 +15,10 @@ import 'src/screens/checkout/checkout_screen.dart';
 import 'src/screens/my_bookings/my_bookings_screen.dart';
 import 'src/screens/payment/payment_screen.dart';
 import 'src/screens/about/about_us.dart';
+import 'src/theme/app_theme.dart';
+import 'src/widgets/animated_splash_screen.dart';
+import 'src/widgets/main_wrapper.dart';
+import 'src/screens/search/search_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,12 +53,18 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => BookingProvider()),
       ],
       child: MaterialApp(
-        title: 'User App',
-        theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-        home: const AuthWrapper(),
+        title: 'Service App',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        debugShowCheckedModeBanner: false,
+        home: const AnimatedSplashScreen(
+          child: AuthWrapper(),
+        ),
         routes: {
           '/login': (context) => const LoginScreen(),
-          '/home': (context) => const HomeScreen(),
+          '/register': (context) => const RegisterScreen(),
+          '/home': (context) => const MainWrapper(),
           '/service-detail': (context) =>
               const ServiceDetailScreen(serviceSlug: ''),
           '/contact-us': (context) => const ContactUsScreen(),
@@ -74,6 +84,7 @@ class MyApp extends StatelessWidget {
             );
           },
           '/about-us': (context) => const AboutUsScreen(),
+          '/search': (context) => const SearchScreen(),
         },
       ),
     );
@@ -93,11 +104,8 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        if (authProvider.isAuthenticated) {
-          return const HomeScreen();
-        }
-
-        return const LoginScreen();
+        // Always show home screen, login button will be shown if not authenticated
+        return const MainWrapper();
       },
     );
   }

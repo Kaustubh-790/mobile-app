@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../api/auth_service.dart';
 import '../../widgets/google_sign_in_button.dart';
 import '../../widgets/phone_auth_widget.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
+class _RegisterScreenState extends State<RegisterScreen>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   late TabController _tabController;
   
   late AnimationController _fadeController;
@@ -68,8 +70,10 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _tabController.dispose();
     _fadeController.dispose();
     _slideController.dispose();
@@ -77,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -85,19 +89,47 @@ class _LoginScreenState extends State<LoginScreen>
     final authProvider = context.read<AuthProvider>();
 
     try {
-      final success = await authProvider.login(
+      final success = await authProvider.register(
+        _nameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
       );
 
       if (success && mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Registration successful! Please check your email to verify your account.',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            action: SnackBarAction(
+              label: 'Login',
+              textColor: Colors.white,
+              onPressed: () {
+                Navigator.pushReplacementNamed(context, '/login');
+              },
+            ),
+          ),
+        );
+        
+        // Navigate to login screen after a short delay
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/login');
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Login failed: $e'),
+            content: Text('Registration failed: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
             behavior: SnackBarBehavior.floating,
@@ -164,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen>
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
-                          Icons.check_circle,
+                          Icons.person_add,
                           size: 60,
                           color: Color(0xFF6366F1),
                         ),
@@ -232,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen>
           children: [
             const SizedBox(height: 20),
             Text(
-              'Welcome Back',
+              'Create Account',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -242,7 +274,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Sign in to your account',
+              'Sign up to get started',
               style: TextStyle(
                 fontSize: 16,
                 color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -250,6 +282,35 @@ class _LoginScreenState extends State<LoginScreen>
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 48),
+
+            // Name Field
+            TextFormField(
+              controller: _nameController,
+              keyboardType: TextInputType.name,
+              textInputAction: TextInputAction.next,
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+              decoration: InputDecoration(
+                labelText: 'Full Name',
+                hintText: 'Enter your full name',
+                prefixIcon: const Icon(Icons.person_outlined),
+                labelStyle: TextStyle(
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+                hintStyle: TextStyle(
+                  color: isDark ? Colors.grey[500] : Colors.grey[400],
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your name';
+                }
+                if (value.trim().length < 2) {
+                  return 'Name must be at least 2 characters';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
 
             // Email Field
             TextFormField(
@@ -285,7 +346,7 @@ class _LoginScreenState extends State<LoginScreen>
             TextFormField(
               controller: _passwordController,
               obscureText: _obscurePassword,
-              textInputAction: TextInputAction.done,
+              textInputAction: TextInputAction.next,
               style: TextStyle(color: isDark ? Colors.white : Colors.black87),
               decoration: InputDecoration(
                 labelText: 'Password',
@@ -312,11 +373,53 @@ class _LoginScreenState extends State<LoginScreen>
                 if (value == null || value.isEmpty) {
                   return 'Please enter your password';
                 }
-                if (value.length < 6) {
-                  return 'Password must be at least 6 characters';
+                if (value.length < 8) {
+                  return 'Password must be at least 8 characters';
                 }
                 return null;
               },
+            ),
+            const SizedBox(height: 20),
+
+            // Confirm Password Field
+            TextFormField(
+              controller: _confirmPasswordController,
+              obscureText: _obscureConfirmPassword,
+              textInputAction: TextInputAction.done,
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+              decoration: InputDecoration(
+                labelText: 'Confirm Password',
+                hintText: 'Confirm your password',
+                prefixIcon: const Icon(Icons.lock_outlined),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureConfirmPassword
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureConfirmPassword = !_obscureConfirmPassword;
+                    });
+                  },
+                ),
+                labelStyle: TextStyle(
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+                hintStyle: TextStyle(
+                  color: isDark ? Colors.grey[500] : Colors.grey[400],
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please confirm your password';
+                }
+                if (value != _passwordController.text) {
+                  return 'Passwords do not match';
+                }
+                return null;
+              },
+              onFieldSubmitted: (_) => _handleRegister(),
             ),
             const SizedBox(height: 32),
 
@@ -324,13 +427,13 @@ class _LoginScreenState extends State<LoginScreen>
             const GoogleSignInButton(),
             const SizedBox(height: 24),
 
-            // Login Button
+            // Register Button
             Consumer<AuthProvider>(
               builder: (context, authProvider, child) {
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   child: ElevatedButton(
-                    onPressed: authProvider.isLoading ? null : _handleLogin,
+                    onPressed: authProvider.isLoading ? null : _handleRegister,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -349,7 +452,7 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           )
                         : const Text(
-                            'Login',
+                            'Create Account',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
@@ -398,22 +501,22 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             const SizedBox(height: 24),
 
-            // Register Link
+            // Login Link
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  "Don't have an account? ",
+                  'Already have an account? ',
                   style: TextStyle(
                     color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, '/register');
+                    Navigator.pushReplacementNamed(context, '/login');
                   },
                   child: const Text(
-                    'Sign Up',
+                    'Sign In',
                     style: TextStyle(
                       color: Color(0xFF6366F1),
                       fontWeight: FontWeight.w600,
@@ -443,7 +546,7 @@ class _LoginScreenState extends State<LoginScreen>
           ),
           const SizedBox(height: 24),
           Text(
-            'Phone Authentication',
+            'Phone Registration',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -453,7 +556,7 @@ class _LoginScreenState extends State<LoginScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'Sign in with your phone number',
+            'Sign up with your phone number',
             style: TextStyle(
               fontSize: 16,
               color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -464,7 +567,7 @@ class _LoginScreenState extends State<LoginScreen>
 
           // Phone Authentication Widget
           PhoneAuthWidget(
-            isSignUp: false,
+            isSignUp: true,
             onSuccess: _handlePhoneAuthSuccess,
           ),
 
@@ -501,22 +604,22 @@ class _LoginScreenState extends State<LoginScreen>
           const GoogleSignInButton(),
           const SizedBox(height: 24),
 
-          // Register Link for Phone Tab
+          // Login Link for Phone Tab
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                "Don't have an account? ",
+                'Already have an account? ',
                 style: TextStyle(
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/register');
+                  Navigator.pushReplacementNamed(context, '/login');
                 },
                 child: const Text(
-                  'Sign Up',
+                  'Sign In',
                   style: TextStyle(
                     color: Color(0xFF6366F1),
                     fontWeight: FontWeight.w600,
