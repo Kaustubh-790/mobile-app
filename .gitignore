@@ -151,3 +151,5 @@ lib/src/config/firebase_config.dart
 .firebase/
 firebase-debug.log
 firebase-debug.*.log
+
+docs/

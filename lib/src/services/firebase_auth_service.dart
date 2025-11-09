@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:dio/dio.dart';
+import '../config/env_config.dart';
 
 class FirebaseAuthService {
   static final FirebaseAuthService _instance = FirebaseAuthService._internal();
@@ -8,9 +9,14 @@ class FirebaseAuthService {
   FirebaseAuthService._internal();
 
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
+  // Use Web client ID as serverClientId for Android to avoid SHA-1 fingerprint issues
+  // The serverClientId parameter is required for Android when using a Web client ID
+  // This avoids the DEVELOPER_ERROR (code 10) that occurs when SHA-1 is not configured
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
-    clientId: null, // Let it use the default from google-services.json
+    // Use serverClientId (not clientId) for Android compatibility
+    // This tells Google Sign-In to use the Web OAuth client instead of Android client
+    serverClientId: EnvConfig.firebaseAndroidClientId,
   );
 
   /// Get current Firebase user
