@@ -15,18 +15,62 @@ class AuthService {
     required String password,
   }) async {
     try {
+      // Increase timeout for registration as email sending might take time
       final response = await ApiClient.dio.post(
         '/auth/register-email',
         data: {'name': name, 'email': email, 'password': password},
+        options: Options(
+          receiveTimeout: const Duration(seconds: 60), // Increased timeout
+          sendTimeout: const Duration(seconds: 30),
+        ),
       );
 
       // Check if response has user data (successful registration)
-      if (response.data['user'] != null) {
-        final user = User.fromJson(response.data['user']);
-        return {
-          'user': user,
-          'message': response.data['message'] ?? 'Registration successful',
-        };
+      if (response.data['user'] != null || response.statusCode == 201) {
+        // Ensure all required fields are present before parsing
+        final userData = response.data['user'] ?? response.data;
+        
+        // Add default values for missing required fields
+        if (userData is Map<String, dynamic>) {
+          // Ensure role exists (required field)
+          userData['role'] = userData['role']?.toString() ?? 'user';
+          
+          // Ensure _id exists and is a string (required field)
+          if (userData['_id'] == null) {
+            // Try to get from 'id' field
+            if (userData['id'] != null) {
+              userData['_id'] = userData['id'].toString();
+            } else {
+              // If still null, this is a critical error
+              throw Exception('User ID is missing from registration response');
+            }
+          } else {
+            // Convert _id to string if it's an ObjectId or other type
+            userData['_id'] = userData['_id'].toString();
+          }
+          
+          // Ensure other optional fields have proper types
+          if (userData['name'] != null) {
+            userData['name'] = userData['name'].toString();
+          }
+          if (userData['email'] != null) {
+            userData['email'] = userData['email'].toString();
+          }
+        }
+        
+        try {
+          final user = User.fromJson(userData);
+          return {
+            'user': user,
+            'message': response.data['message'] ?? 'Registration successful. Please check your email to verify your account.',
+          };
+        } catch (e) {
+          // If parsing fails but status is 201, user was created in DB
+          if (response.statusCode == 201) {
+            throw Exception('Registration completed. Please check your email for verification.');
+          }
+          rethrow;
+        }
       } else {
         throw DioException(
           requestOptions: response.requestOptions,
@@ -35,9 +79,166 @@ class AuthService {
         );
       }
     } on DioException catch (e) {
+      // If timeout but user might have been created, check status code
+      if (e.type == DioExceptionType.receiveTimeout) {
+        // User might have been created but email sending is slow
+        // We should still proceed to verification screen
+        throw Exception('Registration request timed out. Please check your email for verification link. If you don\'t receive it, you can resend it from the verification screen.');
+      }
+      // Check if user was created (status 201) but there was an error parsing response
+      if (e.response?.statusCode == 201) {
+        // User was created, proceed to verification screen
+        throw Exception('User created successfully. Please check your email for verification.');
+      }
       throw _handleDioError(e, 'Registration failed');
     } catch (e) {
+      // If it's a type casting error, user might still have been created
+      final errorStr = e.toString();
+      if (errorStr.contains('type \'Null\' is not a subtype') || 
+          errorStr.contains('type cast')) {
+        // User was likely created in DB, proceed to verification
+        throw Exception('Registration completed. Please check your email for verification.');
+      }
       throw Exception('Unexpected error during registration: $e');
+    }
+  }
+
+  /// Verify email with token
+  Future<Map<String, dynamic>> verifyEmail(String token) async {
+    try {
+      final response = await ApiClient.dio.get(
+        '/auth/verify-email/$token',
+        options: Options(
+          receiveTimeout: const Duration(seconds: 30),
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        // Ensure all required fields are present before parsing user
+        User? user;
+        if (response.data['user'] != null) {
+          try {
+            final userData = response.data['user'];
+            
+            // Add default values for missing required fields
+            if (userData is Map<String, dynamic>) {
+              // Ensure role exists (required field)
+              userData['role'] = userData['role']?.toString() ?? 'user';
+              
+              // Ensure _id exists and is a string (required field)
+              if (userData['_id'] == null) {
+                // Try to get from 'id' field
+                if (userData['id'] != null) {
+                  userData['_id'] = userData['id'].toString();
+                } else {
+                  // If still null, try to use firebaseUid as fallback
+                  if (userData['firebaseUid'] != null) {
+                    userData['_id'] = userData['firebaseUid'].toString();
+                  }
+                }
+              } else {
+                // Convert _id to string if it's an ObjectId or other type
+                userData['_id'] = userData['_id'].toString();
+              }
+              
+              // Ensure other optional fields have proper types
+              if (userData['name'] != null) {
+                userData['name'] = userData['name'].toString();
+              }
+              if (userData['email'] != null) {
+                userData['email'] = userData['email'].toString();
+              }
+              if (userData['firebaseUid'] != null) {
+                userData['firebaseUid'] = userData['firebaseUid'].toString();
+              }
+            }
+            
+            user = User.fromJson(userData);
+          } catch (e) {
+            // If parsing fails but status is 200, verification succeeded
+            // We'll return success with the firebaseToken so user can login
+            print('Warning: Failed to parse user data, but verification succeeded: $e');
+            // Continue without user object - we have firebaseToken
+          }
+        }
+        
+        final firebaseToken = response.data['firebaseToken']?.toString();
+        
+        // If we have firebaseToken, verification succeeded even if user parsing failed
+        if (firebaseToken != null) {
+          return {
+            'success': true,
+            'message': response.data['message'] ?? 'Email verified successfully',
+            'user': user,
+            'firebaseToken': firebaseToken,
+            'alreadyVerified': response.data['alreadyVerified'] ?? false,
+          };
+        } else if (user != null) {
+          // If we have user but no token, still return success
+          // User can login normally
+          return {
+            'success': true,
+            'message': response.data['message'] ?? 'Email verified successfully',
+            'user': user,
+            'firebaseToken': null,
+            'alreadyVerified': response.data['alreadyVerified'] ?? false,
+          };
+        } else {
+          throw Exception('Email verification response missing required data');
+        }
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message: response.data['message'] ?? 'Email verification failed',
+        );
+      }
+    } on DioException catch (e) {
+      // Check if it's a timeout but verification might have succeeded
+      if (e.type == DioExceptionType.receiveTimeout) {
+        throw Exception('Verification request timed out. Please try again or check if verification already succeeded.');
+      }
+      throw _handleDioError(e, 'Email verification failed');
+    } catch (e) {
+      // If it's a type casting error but we got status 200, verification likely succeeded
+      final errorStr = e.toString();
+      if (errorStr.contains('type \'Null\' is not a subtype') || 
+          errorStr.contains('type cast')) {
+        // Verification likely succeeded in backend, but parsing failed
+        // Try to get user by email or firebaseUid if available
+        throw Exception('Verification completed but encountered an error. Please try logging in.');
+      }
+      throw Exception('Unexpected error during email verification: $e');
+    }
+  }
+
+  /// Resend verification email
+  Future<Map<String, dynamic>> resendVerificationEmail(String email) async {
+    try {
+      final response = await ApiClient.dio.post(
+        '/auth/resend-verification',
+        data: {'email': email},
+        options: Options(
+          receiveTimeout: const Duration(seconds: 60),
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'Verification email sent successfully',
+        };
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message: response.data['message'] ?? 'Failed to resend verification email',
+        );
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e, 'Failed to resend verification email');
+    } catch (e) {
+      throw Exception('Unexpected error resending verification email: $e');
     }
   }
 

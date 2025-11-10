@@ -352,4 +352,34 @@ class FirebaseAuthService {
       return null;
     }
   }
+
+  /// Sign in with Firebase custom token
+  Future<Map<String, dynamic>> signInWithCustomToken(String token) async {
+    try {
+      print('FirebaseAuthService: Signing in with custom token...');
+      
+      final userCredential = await _auth.signInWithCustomToken(token);
+      
+      if (userCredential.user != null) {
+        final idToken = await userCredential.user!.getIdToken();
+        print('FirebaseAuthService: Sign in with custom token successful');
+        print('FirebaseAuthService: Firebase UID: ${userCredential.user!.uid}');
+        
+        return {
+          'success': true,
+          'user': {
+            'uid': userCredential.user!.uid,
+            'email': userCredential.user!.email,
+            'displayName': userCredential.user!.displayName,
+          },
+          'idToken': idToken,
+        };
+      }
+      
+      return {'success': false, 'error': 'No user returned from custom token sign in'};
+    } catch (e) {
+      print('FirebaseAuthService: Sign in with custom token failed: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
 }

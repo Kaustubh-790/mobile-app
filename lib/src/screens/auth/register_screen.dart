@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/google_sign_in_button.dart';
 import '../../widgets/phone_auth_widget.dart';
+import 'email_verification_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -96,48 +97,90 @@ class _RegisterScreenState extends State<RegisterScreen>
       );
 
       if (success && mounted) {
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Registration successful! Please check your email to verify your account.',
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            action: SnackBarAction(
-              label: 'Login',
-              textColor: Colors.white,
-              onPressed: () {
-                Navigator.pushReplacementNamed(context, '/login');
-              },
-            ),
+        // Get the email from the form
+        final email = _emailController.text.trim();
+        
+        // Navigate to email verification screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EmailVerificationScreen(email: email),
           ),
         );
-        
-        // Navigate to login screen after a short delay
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            Navigator.pushReplacementNamed(context, '/login');
-          }
-        });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Registration failed: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        final errorMessage = e.toString();
+        final email = _emailController.text.trim();
+        
+        // Check if user was likely created (based on error message or type casting error)
+        // Since user is created in DB even if there's a parsing error, navigate to verification
+        final shouldNavigateToVerification = 
+            errorMessage.contains('timeout') || 
+            errorMessage.contains('Timeout') ||
+            errorMessage.contains('type \'Null\' is not a subtype') ||
+            errorMessage.contains('type cast') ||
+            errorMessage.contains('Registration completed') ||
+            errorMessage.contains('User created successfully');
+        
+        if (shouldNavigateToVerification) {
+          // User was likely created in DB, navigate to verification screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EmailVerificationScreen(email: email),
             ),
-          ),
-        );
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Registration completed. Please check your email for verification or use the resend button if needed.',
+              ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 5),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        } else {
+          // Show error but still try to navigate if it's a parsing error
+          // (user might have been created in DB)
+          if (errorMessage.contains('Unexpected error')) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => EmailVerificationScreen(email: email),
+              ),
+            );
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'Please check your email for verification. If you don\'t receive it, use the resend button.',
+                ),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 5),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Registration failed: $e'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          }
+        }
       }
     }
   }

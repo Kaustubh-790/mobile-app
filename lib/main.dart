@@ -6,6 +6,7 @@ import 'src/providers/cart_provider.dart';
 import 'src/providers/booking_provider.dart';
 import 'src/screens/auth/login_screen.dart';
 import 'src/screens/auth/register_screen.dart';
+import 'src/screens/auth/email_verification_screen.dart';
 import 'src/screens/service/service_detail_screen.dart';
 import 'src/screens/settings/contact_us.dart';
 import 'src/screens/settings/my_profile.dart';

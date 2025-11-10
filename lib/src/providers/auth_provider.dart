@@ -96,7 +96,6 @@ class AuthProvider extends ChangeNotifier {
       );
 
       final user = result['user'] as User;
-      final message = result['message'] as String;
       final firebaseToken = result['firebaseToken'] as String?;
 
       // Save user and token
@@ -369,20 +368,131 @@ class AuthProvider extends ChangeNotifier {
       );
 
       final user = result['user'] as User;
-      final message = result['message'] as String;
 
-      // For registration, user might need to verify email first
-      // So we don't automatically log them in
-      // But we can store the user data for later use
+      // Store user data temporarily (will be cleared after verification)
+      // User doesn't have Firebase UID yet, so we store locally
       _currentUser = user;
-
-      // Note: Registration might not return a token immediately
-      // depending on your backend flow (email verification required)
+      // Don't set auth token yet - user needs to verify email first
 
       notifyListeners();
       return true;
     } catch (e) {
       _setError('Registration failed: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Verify email with token
+  Future<bool> verifyEmail(String token) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final result = await AuthService().verifyEmail(token);
+
+      if (result['success'] == true) {
+        final user = result['user'] as User?;
+        final firebaseToken = result['firebaseToken'] as String?;
+
+        // If we have firebaseToken, verification succeeded - proceed with login
+        if (firebaseToken != null) {
+          // Sign in with Firebase custom token first
+          try {
+            final signInResult = await _firebaseAuth.signInWithCustomToken(firebaseToken);
+            if (signInResult['success'] == true) {
+              print('Successfully signed in with Firebase custom token');
+              // Use the ID token from Firebase for API calls
+              if (signInResult['idToken'] != null) {
+                _authToken = signInResult['idToken'] as String;
+              } else {
+                // Fallback to custom token
+                _authToken = firebaseToken;
+              }
+            } else {
+              // Use custom token as fallback
+              _authToken = firebaseToken;
+            }
+          } catch (e) {
+            print('Error signing in with Firebase token: $e');
+            // Use custom token as fallback - backend will accept it
+            _authToken = firebaseToken;
+          }
+
+          // If user object is null, try to fetch it from backend using Firebase UID
+          if (user == null) {
+            try {
+              // Get Firebase UID from the signed-in user
+              final firebaseUser = _firebaseAuth.currentFirebaseUser;
+              if (firebaseUser != null) {
+                final fetchedUser = await AuthService().getProfileByFirebaseUid(firebaseUser.uid);
+                _currentUser = fetchedUser;
+              }
+            } catch (e) {
+              print('Error fetching user profile: $e');
+              // Continue without user - token is set, user can proceed
+            }
+          } else {
+            _currentUser = user;
+          }
+
+          // Save token and update API client
+          await _saveTokenToStorage(_authToken!);
+          ApiClient().setAuthToken(_authToken!);
+
+          notifyListeners();
+          return true;
+        } else if (user != null) {
+          // User object exists but no firebaseToken - email verified but need to login
+          _currentUser = user;
+          notifyListeners();
+          _setError('Email verified. Please login to continue.');
+          return false;
+        } else if (result['alreadyVerified'] == true) {
+          // Email already verified, but no token returned
+          // User should login normally
+          _setError('Email already verified. Please login to continue.');
+          return false;
+        }
+      }
+
+      _setError('Email verification failed');
+      return false;
+    } catch (e) {
+      // Check if error message suggests verification succeeded
+      final errorStr = e.toString();
+      if (errorStr.contains('Verification completed') || 
+          errorStr.contains('try logging in')) {
+        // Verification likely succeeded, but we can't complete auto-login
+        // User should try logging in manually
+        _setError('Verification completed. Please login to continue.');
+      } else {
+        _setError('Email verification failed: $e');
+      }
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Resend verification email
+  Future<bool> resendVerificationEmail(String email) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final result = await AuthService().resendVerificationEmail(email);
+
+      if (result['success'] == true) {
+        notifyListeners();
+        return true;
+      }
+
+      _setError('Failed to resend verification email');
+      return false;
+    } catch (e) {
+      _setError('Failed to resend verification email: $e');
       return false;
     } finally {
       _setLoading(false);
