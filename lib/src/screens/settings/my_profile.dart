@@ -4,6 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../models/user.dart';
 import '../../api/auth_service.dart';
 import '../auth/login_screen.dart';
+import '../../theme/app_theme.dart';
 
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
@@ -88,6 +89,29 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
+      backgroundColor: AppTheme.beigeDefault,
+      appBar: AppBar(
+        backgroundColor: AppTheme.beigeDefault,
+        title: Text(
+          'MY PROFILE',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            letterSpacing: 1.2,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.brown500),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppTheme.brown500),
+            onPressed: _loadUserProfile,
+            tooltip: 'Refresh Profile',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Consumer<AuthProvider>(
           builder: (context, authProvider, child) {
@@ -102,7 +126,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(),
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryDefault),
+                    ),
                     SizedBox(height: 16),
                     Text('Loading profile...'),
                   ],
@@ -118,31 +144,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             // Show profile content
             return RefreshIndicator(
               onRefresh: _loadUserProfile,
+              color: AppTheme.primaryDefault,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'My Profile',
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.refresh),
-                            onPressed: _loadUserProfile,
-                            tooltip: 'Refresh Profile',
-                          ),
-                        ],
-                      ),
-                    ),
                     _buildProfileHeader(theme),
                     const SizedBox(height: 24),
                     _buildProfileDetails(theme),
@@ -164,15 +171,16 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         children: [
           const SizedBox(height: 80),
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: AppTheme.sand50,
               shape: BoxShape.circle,
+              border: Border.all(color: AppTheme.beige10),
             ),
             child: Icon(
               Icons.person_outline,
               size: 64,
-              color: theme.colorScheme.primary,
+              color: AppTheme.brown300,
             ),
           ),
           const SizedBox(height: 24),
@@ -180,6 +188,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             'Sign in to view your profile',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
+              color: AppTheme.brown500,
             ),
             textAlign: TextAlign.center,
           ),
@@ -187,7 +196,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           Text(
             'Login or create an account to access your profile, manage your information, and track your bookings.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              color: AppTheme.brown300,
             ),
             textAlign: TextAlign.center,
           ),
@@ -206,7 +215,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               icon: const Icon(Icons.login),
               label: const Text('Login / Register'),
               style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryDefault,
+                foregroundColor: AppTheme.beige4,
                 padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
               ),
             ),
           ),
@@ -216,111 +230,151 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   Widget _buildProfileHeader(ThemeData theme) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-              child: Icon(
-                Icons.person,
-                size: 40,
-                color: theme.colorScheme.primary,
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.sand40,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.white.withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: AppTheme.beige200, width: 2),
+            ),
+            child: CircleAvatar(
+              radius: 36,
+              backgroundColor: AppTheme.clay,
+              child: Text(
+                _userProfile!.name?.substring(0, 1).toUpperCase() ?? 'U',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: AppTheme.brown500,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _userProfile!.name ?? 'No Name',
-                    style: const TextStyle(
-                      fontSize: 24,
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _userProfile!.name ?? 'No Name',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.brown500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _userProfile!.email ?? 'No Email',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.brown300,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryDefault.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppTheme.primaryDefault.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Text(
+                    _userProfile!.role.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryDefault,
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _userProfile!.email ?? 'No Email',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      _userProfile!.role.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildProfileDetails(ThemeData theme) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Profile Information',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            _buildProfileField(
-              theme,
-              icon: Icons.person,
-              label: 'Full Name',
-              value: _userProfile!.name ?? 'Not provided',
-            ),
-            const SizedBox(height: 16),
-            _buildProfileField(
-              theme,
-              icon: Icons.email,
-              label: 'Email Address',
-              value: _userProfile!.email ?? 'Not provided',
-            ),
-            const SizedBox(height: 16),
-            _buildProfileField(
-              theme,
-              icon: Icons.phone,
-              label: 'Phone Number',
-              value: _userProfile!.phone ?? 'Not provided',
-            ),
-            const SizedBox(height: 16),
-            _buildProfileField(
-              theme,
-              icon: Icons.location_on,
-              label: 'Address',
-              value: _buildAddressText(),
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.sand40,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Profile Information',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.brown500,
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildProfileField(
+            theme,
+            icon: Icons.person_outline,
+            label: 'Full Name',
+            value: _userProfile!.name ?? 'Not provided',
+          ),
+          _buildDivider(),
+          _buildProfileField(
+            theme,
+            icon: Icons.email_outlined,
+            label: 'Email Address',
+            value: _userProfile!.email ?? 'Not provided',
+          ),
+          _buildDivider(),
+          _buildProfileField(
+            theme,
+            icon: Icons.phone_outlined,
+            label: 'Phone Number',
+            value: _userProfile!.phone ?? 'Not provided',
+          ),
+          _buildDivider(),
+          _buildProfileField(
+            theme,
+            icon: Icons.location_on_outlined,
+            label: 'Address',
+            value: _buildAddressText(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Divider(color: AppTheme.beige10, height: 1),
     );
   }
 
@@ -334,12 +388,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: AppTheme.beige10,
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+          child: Icon(icon, color: AppTheme.brown400, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -348,17 +402,16 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 14,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppTheme.brown300,
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey[600],
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
-                  fontSize: 16,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.brown500,
                   fontWeight: FontWeight.w500,
                 ),
               ),

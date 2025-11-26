@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
-
 import '../../providers/auth_provider.dart';
 import '../../models/cart_item.dart';
 import '../../models/booking.dart';
 import '../../providers/booking_provider.dart';
 import 'payment_screen.dart';
+import '../../theme/app_theme.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -59,9 +59,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: Theme.of(context).colorScheme.primary,
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryDefault,
+              onPrimary: AppTheme.beige4,
+              surface: AppTheme.sand40,
+              onSurface: AppTheme.brown500,
             ),
+            dialogBackgroundColor: AppTheme.sand40,
           ),
           child: child!,
         );
@@ -82,8 +86,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: Theme.of(context).colorScheme.primary,
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryDefault,
+              onPrimary: AppTheme.beige4,
+              surface: AppTheme.sand40,
+              onSurface: AppTheme.brown500,
+            ),
+            timePickerTheme: TimePickerThemeData(
+              backgroundColor: AppTheme.sand40,
+              hourMinuteTextColor: AppTheme.brown500,
+              dayPeriodTextColor: AppTheme.brown500,
+              dialHandColor: AppTheme.primaryDefault,
+              dialBackgroundColor: AppTheme.beige10,
             ),
           ),
           child: child!,
@@ -143,16 +157,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
+      backgroundColor: AppTheme.beigeDefault,
       appBar: AppBar(
-        title: const Text('Checkout'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
+        title: Text(
+          'CHECKOUT',
+          style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: 1.2),
+        ),
+        backgroundColor: AppTheme.beigeDefault,
+        foregroundColor: AppTheme.brown500,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.brown500),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: Consumer<CartProvider>(
         builder: (context, cartProvider, child) {
           if (cartProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppTheme.primaryDefault,
+                ),
+              ),
+            );
           }
 
           if (cartProvider.cartItems.isEmpty) {
@@ -163,23 +195,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   Icon(
                     Icons.shopping_cart_outlined,
                     size: 64,
-                    color: Colors.grey[400],
+                    color: AppTheme.brown200,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Your cart is empty',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: AppTheme.brown500,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Add some services to your cart before checkout',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.brown300,
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryDefault,
+                      foregroundColor: AppTheme.beige4,
+                    ),
                     child: const Text('Go Back'),
                   ),
                 ],
@@ -188,30 +226,30 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Order Summary Section
-                  _buildOrderSummary(cartProvider),
+                  _buildOrderSummary(cartProvider, theme),
                   const SizedBox(height: 24),
 
                   // Address Section
-                  _buildAddressSection(),
+                  _buildAddressSection(theme),
                   const SizedBox(height: 24),
 
                   // Date and Time Section
-                  _buildDateTimeSection(),
+                  _buildDateTimeSection(theme),
                   const SizedBox(height: 24),
 
                   // Notes Section
-                  _buildNotesSection(),
+                  _buildNotesSection(theme),
                   const SizedBox(height: 32),
 
                   // Total and Confirm Button
-                  _buildTotalAndConfirmButton(cartProvider),
+                  _buildTotalAndConfirmButton(cartProvider, theme),
                 ],
               ),
             ),
@@ -221,37 +259,52 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildOrderSummary(CartProvider cartProvider) {
-    return Card(
-      elevation: 2,
+  Widget _buildOrderSummary(CartProvider cartProvider, ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.sand40,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.white.withOpacity(0.5)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Order Summary',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.brown500,
+              ),
             ),
             const SizedBox(height: 16),
-            ...cartProvider.cartItems.map((item) => _buildCartItemTile(item)),
-            const Divider(height: 32),
+            ...cartProvider.cartItems.map(
+              (item) => _buildCartItemTile(item, theme),
+            ),
+            const Divider(height: 32, color: AppTheme.beige10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Total',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.brown500,
+                  ),
                 ),
                 Text(
                   '₹${cartProvider.totalPrice.toStringAsFixed(2)}',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: AppTheme.primaryDefault,
                   ),
                 ),
               ],
@@ -262,7 +315,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildCartItemTile(CartItem item) {
+  Widget _buildCartItemTile(CartItem item, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -275,17 +328,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               children: [
                 Text(
                   item.packageName ?? 'Service',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
+                    color: AppTheme.brown500,
                   ),
                 ),
                 if (item.duration != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     item.duration!,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppTheme.brown300,
+                    ),
                   ),
                 ],
                 if (item.customizations != null &&
@@ -293,8 +347,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   const SizedBox(height: 4),
                   Text(
                     'Customizations: ${item.customizations!.keys.join(', ')}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppTheme.brown300,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -305,44 +359,70 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           const SizedBox(width: 16),
           Text(
             'Qty: ${item.quantity}',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppTheme.brown400,
+            ),
           ),
           const SizedBox(width: 16),
           Text(
             '₹${(item.price * item.quantity).toStringAsFixed(2)}',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppTheme.brown500,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAddressSection() {
-    return Card(
-      elevation: 2,
+  Widget _buildAddressSection(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.sand40,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.white.withOpacity(0.5)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Service Address',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.brown500,
+              ),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _addressController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Address',
                 hintText: 'Enter the address where you want the service',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.location_on),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppTheme.beige10),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppTheme.beige10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppTheme.primaryDefault),
+                ),
+                prefixIcon: Icon(Icons.location_on, color: AppTheme.brown400),
+                filled: true,
+                fillColor: AppTheme.sand50,
               ),
               maxLines: 3,
               validator: (value) {
@@ -358,11 +438,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildDateTimeSection() {
-    return Card(
-      elevation: 2,
+  Widget _buildDateTimeSection(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.sand40,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.white.withOpacity(0.5)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -370,15 +461,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               children: [
                 Text(
                   'Preferred Date & Time',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: AppTheme.brown500,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   '*',
                   style: TextStyle(
-                    color: Colors.red[600],
+                    color: AppTheme.error,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -387,16 +479,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             const SizedBox(height: 8),
             Text(
               'Bookings cannot be scheduled before 9:00 AM IST',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.orange[700],
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Time format: 24-hour (e.g., 14:00 for 2:00 PM)',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppTheme.clay,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -411,8 +495,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     children: [
                       Text(
                         'Date',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
+                          color: AppTheme.brown400,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -424,14 +509,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             vertical: 16,
                           ),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey[400]!),
-                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppTheme.beige10),
+                            borderRadius: BorderRadius.circular(12),
+                            color: AppTheme.sand50,
                           ),
                           child: Row(
                             children: [
                               Icon(
                                 Icons.calendar_today,
-                                color: Colors.grey[600],
+                                color: AppTheme.brown400,
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
@@ -441,8 +527,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     : 'Select Date',
                                 style: TextStyle(
                                   color: _selectedDate != null
-                                      ? Colors.black
-                                      : Colors.grey[600],
+                                      ? AppTheme.brown500
+                                      : AppTheme.brown300,
                                 ),
                               ),
                             ],
@@ -455,7 +541,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           child: Text(
                             _validateDate()!,
                             style: TextStyle(
-                              color: Colors.red[600],
+                              color: AppTheme.error,
                               fontSize: 12,
                             ),
                           ),
@@ -472,8 +558,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     children: [
                       Text(
                         'Time',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
+                          color: AppTheme.brown400,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -485,14 +572,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             vertical: 16,
                           ),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey[400]!),
-                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppTheme.beige10),
+                            borderRadius: BorderRadius.circular(12),
+                            color: AppTheme.sand50,
                           ),
                           child: Row(
                             children: [
                               Icon(
                                 Icons.access_time,
-                                color: Colors.grey[600],
+                                color: AppTheme.brown400,
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
@@ -502,8 +590,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     : 'Select Time',
                                 style: TextStyle(
                                   color: _selectedTime != null
-                                      ? Colors.black
-                                      : Colors.grey[600],
+                                      ? AppTheme.brown500
+                                      : AppTheme.brown300,
                                 ),
                               ),
                             ],
@@ -516,7 +604,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           child: Text(
                             _validateTime()!,
                             style: TextStyle(
-                              color: Colors.red[600],
+                              color: AppTheme.error,
                               fontSize: 12,
                             ),
                           ),
@@ -532,28 +620,53 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildNotesSection() {
-    return Card(
-      elevation: 2,
+  Widget _buildNotesSection(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.sand40,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.white.withOpacity(0.5)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Additional Notes (Optional)',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.brown500,
+              ),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _notesController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Notes',
                 hintText: 'Any special instructions or requirements',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.note),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppTheme.beige10),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppTheme.beige10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppTheme.primaryDefault),
+                ),
+                prefixIcon: Icon(Icons.note, color: AppTheme.brown400),
+                filled: true,
+                fillColor: AppTheme.sand50,
               ),
               maxLines: 3,
             ),
@@ -563,29 +676,43 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildTotalAndConfirmButton(CartProvider cartProvider) {
+  Widget _buildTotalAndConfirmButton(
+    CartProvider cartProvider,
+    ThemeData theme,
+  ) {
     return Column(
       children: [
         // Total Summary
-        Card(
-          elevation: 2,
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.sand40,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(color: Colors.white.withOpacity(0.5)),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Total Amount:',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.brown500,
+                  ),
                 ),
                 Text(
                   '₹${cartProvider.totalPrice.toStringAsFixed(2)}',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                    fontSize: 24,
+                    color: AppTheme.primaryDefault,
                   ),
                 ),
               ],
@@ -603,11 +730,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ? null
                 : () => _confirmBooking(cartProvider),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
+              backgroundColor: AppTheme.primaryDefault,
+              foregroundColor: AppTheme.beige4,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(30),
               ),
+              elevation: 4,
             ),
             child: _isProcessing
                 ? const SizedBox(
@@ -615,7 +743,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     width: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppTheme.beige4,
+                      ),
                     ),
                   )
                 : const Text(
@@ -629,9 +759,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         const SizedBox(height: 16),
         Text(
           'By proceeding to payment, you agree to our terms and conditions.',
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+          style: theme.textTheme.bodySmall?.copyWith(color: AppTheme.brown300),
           textAlign: TextAlign.center,
         ),
       ],
@@ -654,7 +782,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           content: Text(
             dateError ?? timeError ?? 'Please select valid date and time',
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: AppTheme.error,
         ),
       );
       return;
@@ -728,7 +856,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.error),
         );
       }
     } finally {
@@ -748,63 +876,92 @@ class CheckoutSuccessScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
+      backgroundColor: AppTheme.beigeDefault,
       appBar: AppBar(
-        title: const Text('Booking Confirmed'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
+        title: Text(
+          'BOOKING CONFIRMED',
+          style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: 1.2),
+        ),
+        backgroundColor: AppTheme.primaryDefault,
+        foregroundColor: AppTheme.beige4,
         automaticallyImplyLeading: false,
+        centerTitle: true,
       ),
       body: Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.check_circle_outline,
-                size: 80,
-                color: Colors.green[600],
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_circle_outline,
+                  size: 80,
+                  color: Colors.green[600],
+                ),
               ),
               const SizedBox(height: 24),
               Text(
                 'Booking Confirmed!',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.green[700],
+                  color: AppTheme.brown500,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
                 'Your booking has been successfully created.',
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.brown300,
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
               // Booking Details Card
-              Card(
-                elevation: 2,
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.sand40,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                  border: Border.all(color: Colors.white.withOpacity(0.5)),
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
-                      _buildDetailRow('Booking ID', booking.id ?? 'N/A'),
+                      _buildDetailRow('Booking ID', booking.id ?? 'N/A', theme),
                       _buildDetailRow(
                         'Total Amount',
                         '₹${booking.totalAmount.toStringAsFixed(2)}',
+                        theme,
+                        isHighlight: true,
                       ),
-                      _buildDetailRow('Status', booking.status.toUpperCase()),
+                      _buildDetailRow(
+                        'Status',
+                        booking.status.toUpperCase(),
+                        theme,
+                      ),
                       _buildDetailRow(
                         'Address',
-                        booking.address ?? 'Not specified',
+                        booking.address ?? 'Not Specified',
+                        theme,
                       ),
-                      _buildDetailRow(
-                        'Preferred Date',
-                        '${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',
-                      ),
-                      _buildDetailRow('Preferred Time', booking.bookingTime),
                     ],
                   ),
                 ),
@@ -812,35 +969,28 @@ class CheckoutSuccessScreen extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              // Action Buttons
               SizedBox(
                 width: double.infinity,
-                height: 48,
+                height: 56,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Navigate to home or bookings screen
-                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    // Navigate back to home and clear stack
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      '/',
+                      (Route<dynamic> route) => false,
+                    );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppTheme.primaryDefault,
+                    foregroundColor: AppTheme.beige4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                   ),
-                  child: const Text('Go to Home'),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: () {
-                    // Navigate to bookings screen
-                    Navigator.of(context).popUntil((route) => route.isFirst);
-                    // TODO: Navigate to bookings screen
-                  },
-                  child: const Text('View My Bookings'),
+                  child: const Text(
+                    'Back to Home',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
@@ -850,26 +1000,36 @@ class CheckoutSuccessScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(
+    String label,
+    String value,
+    ThemeData theme, {
+    bool isHighlight = false,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey,
-              ),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppTheme.brown300,
+              fontWeight: FontWeight.w500,
             ),
           ),
+          const SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: isHighlight
+                    ? AppTheme.primaryDefault
+                    : AppTheme.brown500,
+                fontWeight: isHighlight ? FontWeight.bold : FontWeight.w600,
+              ),
+              textAlign: TextAlign.right,
             ),
           ),
         ],

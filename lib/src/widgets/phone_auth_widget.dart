@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/phone_auth_service.dart';
 import '../screens/auth/onboarding_screen.dart';
+import '../theme/app_theme.dart';
 
 class PhoneAuthWidget extends StatefulWidget {
   final VoidCallback? onSuccess;
@@ -101,7 +102,7 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
         } else {
           // Navigate to home screen
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Phone authentication successful!'),
               backgroundColor: Colors.green,
             ),
@@ -137,7 +138,7 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('OTP resent successfully'),
             backgroundColor: Colors.green,
           ),
@@ -174,12 +175,26 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
             if (widget.isSignUp) ...[
               TextFormField(
                 controller: _nameController,
+                style: TextStyle(color: AppTheme.brown500),
                 decoration: InputDecoration(
                   labelText: 'Full Name',
                   hintText: 'Enter your full name',
-                  prefixIcon: Icon(Icons.person_outline),
+                  prefixIcon: Icon(Icons.person_outline, color: AppTheme.brown400),
+                  labelStyle: TextStyle(color: AppTheme.brown300),
+                  hintStyle: TextStyle(color: AppTheme.brown200),
+                  filled: true,
+                  fillColor: AppTheme.sand50,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppTheme.beige10),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppTheme.beige10),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppTheme.primaryDefault),
                   ),
                 ),
                 validator: (value) {
@@ -189,17 +204,31 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
             ],
 
             TextFormField(
               controller: _phoneController,
+              style: TextStyle(color: AppTheme.brown500),
               decoration: InputDecoration(
                 labelText: 'Phone Number',
                 hintText: 'Enter your phone number',
-                prefixIcon: Icon(Icons.phone_outlined),
+                prefixIcon: Icon(Icons.phone_outlined, color: AppTheme.brown400),
+                labelStyle: TextStyle(color: AppTheme.brown300),
+                hintStyle: TextStyle(color: AppTheme.brown200),
+                filled: true,
+                fillColor: AppTheme.sand50,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.beige10),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.beige10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.primaryDefault),
                 ),
               ),
               keyboardType: TextInputType.phone,
@@ -218,28 +247,29 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
               },
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             ElevatedButton(
               onPressed: _isLoading ? null : _sendOTP,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: AppTheme.primaryDefault,
+                foregroundColor: AppTheme.beige4,
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 4,
               ),
               child: _isLoading
-                  ? SizedBox(
+                  ? const SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.beige4),
                       ),
                     )
-                  : Text(
+                  : const Text(
                       'Send OTP',
                       style: TextStyle(
                         fontSize: 16,
@@ -251,20 +281,34 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
             // OTP input section
             Text(
               'Enter the 6-digit OTP sent to $_phoneNumber',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 16, color: AppTheme.brown300),
               textAlign: TextAlign.center,
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             TextFormField(
               controller: _otpController,
+              style: TextStyle(color: AppTheme.brown500),
               decoration: InputDecoration(
                 labelText: 'OTP Code',
                 hintText: 'Enter 6-digit OTP',
-                prefixIcon: Icon(Icons.lock_outline),
+                prefixIcon: Icon(Icons.lock_outline, color: AppTheme.brown400),
+                labelStyle: TextStyle(color: AppTheme.brown300),
+                hintStyle: TextStyle(color: AppTheme.brown200),
+                filled: true,
+                fillColor: AppTheme.sand50,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.beige10),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.beige10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.primaryDefault),
                 ),
               ),
               keyboardType: TextInputType.number,
@@ -280,36 +324,43 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
               },
             ),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             Row(
               children: [
                 TextButton(
                   onPressed: _isLoading ? null : _goBackToPhoneInput,
-                  child: Text('Change Phone Number'),
+                  child: Text(
+                    'Change Phone Number',
+                    style: TextStyle(color: AppTheme.primaryDefault),
+                  ),
                 ),
-                Spacer(),
+                const Spacer(),
                 TextButton(
                   onPressed: _isLoading ? null : _resendOTP,
-                  child: Text('Resend OTP'),
+                  child: Text(
+                    'Resend OTP',
+                    style: TextStyle(color: AppTheme.primaryDefault),
+                  ),
                 ),
               ],
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             ElevatedButton(
               onPressed: _isLoading ? null : _verifyOTP,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 4,
               ),
               child: _isLoading
-                  ? SizedBox(
+                  ? const SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
@@ -317,7 +368,7 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : Text(
+                  : const Text(
                       'Verify OTP',
                       style: TextStyle(
                         fontSize: 16,
@@ -328,33 +379,33 @@ class _PhoneAuthWidgetState extends State<PhoneAuthWidget> {
           ],
 
           if (_errorMessage.isNotEmpty) ...[
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Container(
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.red[50],
+                color: AppTheme.error.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red[200]!),
+                border: Border.all(color: AppTheme.error.withOpacity(0.3)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, color: Colors.red[600]),
-                  SizedBox(width: 8),
+                  Icon(Icons.error_outline, color: AppTheme.error),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _errorMessage,
-                      style: TextStyle(color: Colors.red[700]),
+                      style: TextStyle(color: AppTheme.error),
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close, color: Colors.red[600]),
+                    icon: Icon(Icons.close, color: AppTheme.error),
                     onPressed: () {
                       setState(() {
                         _errorMessage = '';
                       });
                     },
                     padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(),
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),

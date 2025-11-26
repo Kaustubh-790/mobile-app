@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class StatusUtils {
   static Color getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'completed':
-        return Colors.green;
+        return AppTheme.success;
       case 'confirmed':
-        return Colors.blue;
+        return AppTheme.primaryDefault;
       case 'pending':
-        return Colors.orange;
+        return AppTheme.warning;
       case 'cancelled':
-        return Colors.red;
+        return AppTheme.error;
       case 'rescheduled':
-        return Colors.purple;
+        return AppTheme.brown300;
       default:
-        return Colors.grey;
+        return AppTheme.brown200;
     }
   }
 

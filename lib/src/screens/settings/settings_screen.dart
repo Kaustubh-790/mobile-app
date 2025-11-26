@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import 'my_profile.dart';
 import 'contact_us.dart';
-import '../about/about_us.dart'; // Add this import
+import '../about/about_us.dart';
+import '../../theme/app_theme.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -11,153 +12,263 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    
     return Scaffold(
+      backgroundColor: AppTheme.sand50, // Specifically mentioned Sand 50
+      appBar: AppBar(
+        backgroundColor: AppTheme.sand50,
+        title: Text(
+          'SETTINGS',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            letterSpacing: 1.2,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.brown500),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: SafeArea(
-        child: Column(
+        child: ListView(
+          padding: const EdgeInsets.all(20),
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Text(
-                    'Settings',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+            // Account Section
+            _buildSectionHeader(context, 'ACCOUNT'),
+            _buildSettingsGroup(
+              context,
+              children: [
+                _buildSettingsTile(
+                  context,
+                  icon: Icons.person_outline,
+                  title: 'Personal Details',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MyProfileScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDivider(),
+                _buildSettingsTile(
+                  context,
+                  icon: Icons.payment_outlined,
+                  title: 'Payment Methods',
+                  onTap: () {
+                    // Navigate to payment methods
+                  },
+                ),
+                _buildDivider(),
+                _buildSettingsTile(
+                  context,
+                  icon: Icons.location_on_outlined,
+                  title: 'Address Book',
+                  onTap: () {
+                    // Navigate to address book
+                  },
+                ),
+                _buildDivider(),
+                _buildSettingsTile(
+                  context,
+                  icon: Icons.notifications_none_outlined,
+                  title: 'Notifications',
+                  onTap: () {
+                    // Navigate to notifications
+                  },
+                ),
+              ],
             ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  // Profile Section
-                  _buildSectionHeader('Account'),
-                  _buildSettingsTile(
-                    context,
-                    icon: Icons.person,
-                    title: 'My Profile',
-                    subtitle: 'View and manage your profile information',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MyProfileScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
+            const SizedBox(height: 24),
 
-                  // Support Section
-                  _buildSectionHeader('Support'),
-                  _buildSettingsTile(
-                    context,
-                    icon: Icons.info_outline,
-                    title: 'About Us',
-                    subtitle: 'Learn more about our company',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const AboutUsScreen()),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  _buildSettingsTile(
-                    context,
-                    icon: Icons.contact_support,
-                    title: 'Contact Us',
-                    subtitle: 'Get help and support',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ContactUsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
+            // Support Section
+            _buildSectionHeader(context, 'SUPPORT'),
+            _buildSettingsGroup(
+              context,
+              children: [
+                _buildSettingsTile(
+                  context,
+                  icon: Icons.help_outline,
+                  title: 'Help Center',
+                  onTap: () {
+                    // Navigate to help center
+                  },
+                ),
+                _buildDivider(),
+                _buildSettingsTile(
+                  context,
+                  icon: Icons.headset_mic_outlined,
+                  title: 'Contact Us',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ContactUsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDivider(),
+                _buildSettingsTile(
+                  context,
+                  icon: Icons.feedback_outlined,
+                  title: 'Leave Feedback',
+                  onTap: () {
+                    // Navigate to feedback
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
 
-                  // Account Actions Section - Only show if authenticated
-                  Consumer<AuthProvider>(
-                    builder: (context, authProvider, child) {
-                      if (authProvider.isAuthenticated) {
-                        return Column(
-                          children: [
-                            _buildSectionHeader('Account Actions'),
-                            _buildSettingsTile(
-                              context,
-                              icon: Icons.logout,
-                              title: 'Logout',
-                              subtitle: 'Sign out of your account',
-                              onTap: () async {
-                                // Show confirmation dialog
-                                final shouldLogout = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Logout'),
-                                    content: const Text('Are you sure you want to logout?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.of(context).pop(false),
-                                        child: const Text('Cancel'),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () => Navigator.of(context).pop(true),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
-                                          foregroundColor: Colors.white,
-                                        ),
-                                        child: const Text('Logout'),
-                                      ),
-                                    ],
-                                  ),
-                                );
+            // App Info Section
+            _buildSectionHeader(context, 'APP INFORMATION'),
+            _buildSettingsGroup(
+              context,
+              children: [
+                _buildSettingsTile(
+                  context,
+                  icon: Icons.gavel_outlined,
+                  title: 'Terms of Service',
+                  onTap: () {
+                    // Navigate to terms
+                  },
+                ),
+                _buildDivider(),
+                _buildSettingsTile(
+                  context,
+                  icon: Icons.privacy_tip_outlined,
+                  title: 'Privacy Policy',
+                  onTap: () {
+                    // Navigate to privacy
+                  },
+                ),
+                _buildDivider(),
+                _buildSettingsTile(
+                  context,
+                  icon: Icons.info_outline,
+                  title: 'About this App',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AboutUsScreen()),
+                    );
+                  },
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 32),
 
-                                if (shouldLogout == true) {
-                                  await authProvider.logout();
-                                }
-                              },
+            // Logout Button
+            Consumer<AuthProvider>(
+              builder: (context, authProvider, child) {
+                if (authProvider.isAuthenticated) {
+                  return SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final shouldLogout = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: AppTheme.sand40,
+                            title: Text(
+                              'Logout',
+                              style: theme.textTheme.titleLarge,
                             ),
-                            const SizedBox(height: 24),
-                          ],
+                            content: Text(
+                              'Are you sure you want to logout?',
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(false),
+                                child: Text(
+                                  'Cancel',
+                                  style: TextStyle(color: AppTheme.brown300),
+                                ),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.of(context).pop(true),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryDefault,
+                                  foregroundColor: AppTheme.beige4,
+                                ),
+                                child: const Text('Logout'),
+                              ),
+                            ],
+                          ),
                         );
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
 
-                  // App Info Section
-                  _buildSectionHeader('App Information'),
-                  _buildInfoTile(icon: Icons.info, title: 'Version', subtitle: '1.0.0'),
-                  _buildInfoTile(
-                    icon: Icons.build,
-                    title: 'Build',
-                    subtitle: '2024.1.0',
-                  ),
-                ],
-              ),
+                        if (shouldLogout == true) {
+                          await authProvider.logout();
+                          if (context.mounted) {
+                            Navigator.of(context).pushNamedAndRemoveUntil(
+                              '/login', 
+                              (route) => false,
+                            );
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryDefault,
+                        foregroundColor: AppTheme.beige4,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Logout',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: AppTheme.beige4,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.only(top: 16, bottom: 8),
+      padding: const EdgeInsets.only(bottom: 12, left: 4),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: AppTheme.brown300,
+          letterSpacing: 1.0,
         ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsGroup(BuildContext context, {required List<Widget> children}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.beige4, // Using lighter beige for card background
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: children,
       ),
     );
   }
@@ -166,61 +277,30 @@ class SettingsScreen extends StatelessWidget {
     BuildContext context, {
     required IconData icon,
     required String title,
-    required String subtitle,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: Theme.of(context).primaryColor, size: 24),
+    return ListTile(
+      leading: Icon(icon, color: AppTheme.brown500, size: 22),
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          color: AppTheme.brown500,
+          fontWeight: FontWeight.w500,
         ),
-        title: Text(
-          title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: onTap,
       ),
+      trailing: Icon(Icons.chevron_right, color: AppTheme.brown200, size: 20),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     );
   }
 
-  Widget _buildInfoTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: Colors.grey[600], size: 24),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-        ),
-      ),
+  Widget _buildDivider() {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: AppTheme.beige10,
+      indent: 20,
+      endIndent: 20,
     );
   }
 }

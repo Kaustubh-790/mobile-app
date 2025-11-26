@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../../models/user.dart';
 import '../../api/api_client.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final User user;
@@ -171,12 +172,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
+      backgroundColor: AppTheme.beigeDefault,
       appBar: AppBar(
-        title: const Text('Complete Your Profile'),
+        title: Text(
+          'COMPLETE PROFILE',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            letterSpacing: 1.2,
+          ),
+        ),
         automaticallyImplyLeading: false, // Prevent back navigation
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
+        backgroundColor: AppTheme.beigeDefault,
+        foregroundColor: AppTheme.brown500,
+        elevation: 0,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -187,34 +198,48 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               // Welcome message
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppTheme.sand40,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.5)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.person_add,
-                      size: 48,
-                      color: Theme.of(context).primaryColor,
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryDefault.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.person_add,
+                        size: 48,
+                        color: AppTheme.primaryDefault,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'Welcome! Let\'s get to know you better',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: AppTheme.brown500,
+                        fontWeight: FontWeight.bold,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Please provide some basic information to complete your profile',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.brown300,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -229,13 +254,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
+                    color: AppTheme.sand50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.beige10),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.phone, color: Colors.grey[600]),
+                      Icon(Icons.phone, color: AppTheme.brown400),
                       const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,15 +269,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             'Phone Number',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AppTheme.brown300,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           Text(
                             widget.user.phone ?? 'Not available',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
+                              color: AppTheme.brown500,
                             ),
                           ),
                         ],
@@ -264,11 +290,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 // Editable phone field for email users
                 TextFormField(
                   controller: _phoneController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Phone Number *',
                     hintText: 'Enter your phone number',
-                    prefixIcon: Icon(Icons.phone),
-                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.phone, color: AppTheme.brown400),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppTheme.beige10),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppTheme.beige10),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppTheme.primaryDefault),
+                    ),
+                    filled: true,
+                    fillColor: AppTheme.sand50,
+                    labelStyle: TextStyle(color: AppTheme.brown300),
+                    hintStyle: TextStyle(color: AppTheme.brown200),
                   ),
                   keyboardType: TextInputType.phone,
                   validator: (value) {
@@ -287,6 +328,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     return null;
                   },
                   textInputAction: TextInputAction.next,
+                  style: TextStyle(color: AppTheme.brown500),
                 ),
 
               if (!_isEmailUser) const SizedBox(height: 24),
@@ -295,11 +337,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               // Name field
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Full Name *',
                   hintText: 'Enter your full name',
-                  prefixIcon: Icon(Icons.person),
-                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person, color: AppTheme.brown400),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppTheme.beige10),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppTheme.beige10),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppTheme.primaryDefault),
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.sand50,
+                  labelStyle: TextStyle(color: AppTheme.brown300),
+                  hintStyle: TextStyle(color: AppTheme.brown200),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -311,6 +368,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   return null;
                 },
                 textInputAction: TextInputAction.next,
+                style: TextStyle(color: AppTheme.brown500),
               ),
 
               const SizedBox(height: 20),
@@ -321,13 +379,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
+                    color: AppTheme.sand50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.beige10),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.email, color: Colors.grey[600]),
+                      Icon(Icons.email, color: AppTheme.brown400),
                       const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,15 +394,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             'Email Address',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AppTheme.brown300,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           Text(
                             widget.user.email ?? 'Not available',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
+                              color: AppTheme.brown500,
                             ),
                           ),
                         ],
@@ -356,11 +415,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 // Editable email field for phone users (optional)
                 TextFormField(
                   controller: _emailController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Email Address',
                     hintText: 'Enter your email (optional)',
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.email, color: AppTheme.brown400),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppTheme.beige10),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppTheme.beige10),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppTheme.primaryDefault),
+                    ),
+                    filled: true,
+                    fillColor: AppTheme.sand50,
+                    labelStyle: TextStyle(color: AppTheme.brown300),
+                    hintStyle: TextStyle(color: AppTheme.brown200),
                   ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
@@ -376,6 +450,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     return null;
                   },
                   textInputAction: TextInputAction.next,
+                  style: TextStyle(color: AppTheme.brown500),
                 ),
 
               const SizedBox(height: 20),
@@ -383,11 +458,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               // Address field (required)
               TextFormField(
                 controller: _addressController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Address *',
                   hintText: 'Enter your address',
-                  prefixIcon: Icon(Icons.location_on),
-                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.location_on, color: AppTheme.brown400),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppTheme.beige10),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppTheme.beige10),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppTheme.primaryDefault),
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.sand50,
+                  labelStyle: TextStyle(color: AppTheme.brown300),
+                  hintStyle: TextStyle(color: AppTheme.brown200),
                 ),
                 maxLines: 3,
                 textInputAction: TextInputAction.done,
@@ -400,6 +490,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   }
                   return null;
                 },
+                style: TextStyle(color: AppTheme.brown500),
               ),
 
               const SizedBox(height: 32),
@@ -409,18 +500,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red[200]!),
+                    color: AppTheme.error.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.error.withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red[600]),
+                      Icon(Icons.error_outline, color: AppTheme.error),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: TextStyle(color: Colors.red[700]),
+                          style: TextStyle(color: AppTheme.error),
                         ),
                       ),
                     ],
@@ -433,12 +524,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _submitProfile,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppTheme.primaryDefault,
+                  foregroundColor: AppTheme.beige4,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(30),
                   ),
+                  elevation: 4,
                 ),
                 child: _isLoading
                     ? const SizedBox(
@@ -447,7 +539,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                            AppTheme.beige4,
                           ),
                         ),
                       )
@@ -465,7 +557,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               // Info text
               Text(
                 'You can update this information later in your profile settings',
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                style: TextStyle(color: AppTheme.brown300, fontSize: 12),
                 textAlign: TextAlign.center,
               ),
             ],

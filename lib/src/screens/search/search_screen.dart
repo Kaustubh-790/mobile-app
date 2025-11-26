@@ -3,6 +3,7 @@ import '../../services/api_service.dart';
 import '../../models/service_model.dart';
 import '../../widgets/service_card.dart';
 import '../service/service_detail_screen.dart';
+import '../../theme/app_theme.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -80,36 +81,63 @@ class _SearchScreenState extends State<SearchScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: AppTheme.beigeDefault,
       appBar: AppBar(
-        title: const Text('Search Services'),
+        backgroundColor: AppTheme.beigeDefault,
+        title: Text(
+          'SEARCH SERVICES',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            letterSpacing: 1.2,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.brown500),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: SafeArea(
         child: Column(
           children: [
             // Search Bar
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: ValueListenableBuilder<TextEditingValue>(
                 valueListenable: _searchController,
                 builder: (context, value, child) {
                   return TextField(
                     controller: _searchController,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.brown500,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Search for services...',
-                      prefixIcon: const Icon(Icons.search),
+                      hintStyle: TextStyle(color: AppTheme.brown300),
+                      prefixIcon: Icon(Icons.search, color: AppTheme.brown400),
                       suffixIcon: value.text.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear),
+                              icon: Icon(Icons.clear, color: AppTheme.brown400),
                               onPressed: () {
                                 _searchController.clear();
                               },
                             )
                           : null,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(color: AppTheme.beige10),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(color: AppTheme.beige10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide(color: AppTheme.primaryDefault),
                       ),
                       filled: true,
-                      fillColor: theme.colorScheme.surface,
+                      fillColor: AppTheme.sand50,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                     ),
                     textInputAction: TextInputAction.search,
                   );
@@ -120,7 +148,7 @@ class _SearchScreenState extends State<SearchScreen> {
             // Results count or All services label
             if (!_isLoading && _filteredServices.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -128,7 +156,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         ? 'Found ${_filteredServices.length} service${_filteredServices.length == 1 ? '' : 's'}'
                         : 'All Services (${_filteredServices.length})',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: AppTheme.brown300,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -151,9 +179,11 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryDefault),
+            ),
             SizedBox(height: 16),
-            Text('Loading services...'),
+            Text('Loading services...', style: TextStyle(color: AppTheme.brown300)),
           ],
         ),
       );
@@ -167,13 +197,14 @@ class _SearchScreenState extends State<SearchScreen> {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: theme.colorScheme.error,
+              color: AppTheme.error,
             ),
             const SizedBox(height: 16),
             Text(
               'Error loading services',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w600,
+                color: AppTheme.brown500,
               ),
             ),
             const SizedBox(height: 8),
@@ -181,13 +212,19 @@ class _SearchScreenState extends State<SearchScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 _error!,
-                style: theme.textTheme.bodyMedium,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.brown300,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _loadAllServices,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryDefault,
+                foregroundColor: AppTheme.beige4,
+              ),
               child: const Text('Retry'),
             ),
           ],
@@ -203,20 +240,21 @@ class _SearchScreenState extends State<SearchScreen> {
             Icon(
               Icons.search_off,
               size: 64,
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              color: AppTheme.brown200,
             ),
             const SizedBox(height: 16),
             Text(
               'No services found',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w600,
+                color: AppTheme.brown500,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Try searching with different keywords',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: AppTheme.brown300,
               ),
             ),
           ],
@@ -232,20 +270,21 @@ class _SearchScreenState extends State<SearchScreen> {
             Icon(
               Icons.search,
               size: 64,
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              color: AppTheme.brown200,
             ),
             const SizedBox(height: 16),
             Text(
               'No services available',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w600,
+                color: AppTheme.brown500,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'There are no services available at the moment',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: AppTheme.brown300,
               ),
               textAlign: TextAlign.center,
             ),
@@ -255,12 +294,12 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.85,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        childAspectRatio: 0.75,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
       ),
       itemCount: _filteredServices.length,
       itemBuilder: (context, index) {

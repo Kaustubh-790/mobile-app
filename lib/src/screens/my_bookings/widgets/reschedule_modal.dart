@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../models/booking.dart';
 import '../../../utils/date_formatter.dart';
+import '../../../theme/app_theme.dart';
 
 class RescheduleModal extends StatefulWidget {
   final Booking booking;
@@ -79,8 +80,12 @@ class _RescheduleModalState extends State<RescheduleModal>
         return Theme(
           data: theme.copyWith(
             colorScheme: theme.colorScheme.copyWith(
-              primary: theme.colorScheme.primary,
+              primary: AppTheme.primaryDefault,
+              onPrimary: AppTheme.beige4,
+              surface: AppTheme.beigeDefault,
+              onSurface: AppTheme.brown500,
             ),
+            dialogBackgroundColor: AppTheme.beigeDefault,
           ),
           child: child!,
         );
@@ -104,8 +109,12 @@ class _RescheduleModalState extends State<RescheduleModal>
         return Theme(
           data: theme.copyWith(
             colorScheme: theme.colorScheme.copyWith(
-              primary: theme.colorScheme.primary,
+              primary: AppTheme.primaryDefault,
+              onPrimary: AppTheme.beige4,
+              surface: AppTheme.beigeDefault,
+              onSurface: AppTheme.brown500,
             ),
+            dialogBackgroundColor: AppTheme.beigeDefault,
           ),
           child: child!,
         );
@@ -223,292 +232,321 @@ class _RescheduleModalState extends State<RescheduleModal>
       child: Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        child: Card(
-          child: Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.8,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.schedule,
-                          color: theme.colorScheme.primary,
-                          size: 24,
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppTheme.beigeDefault,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryDefault.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.schedule,
+                        color: AppTheme.primaryDefault,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'Reschedule Service',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.brown500,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Reschedule Service',
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close),
-                        tooltip: 'Close',
-                      ),
-                    ],
-                  ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: Icon(Icons.close, color: AppTheme.brown400),
+                      tooltip: 'Close',
+                    ),
+                  ],
                 ),
-                const Divider(height: 1),
+              ),
+              Divider(height: 1, color: AppTheme.beige10),
 
-                // Content
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Service Info Card
-                        Card(
-                          color: theme.colorScheme.surface,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  service.serviceId.toUpperCase(),
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today,
-                                      size: 16,
-                                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Original: ${DateFormatter.formatDate(originalDate)} at $originalTime',
-                                      style: theme.textTheme.bodySmall,
-                                    ),
-                                  ],
-                                ),
-                                if (service.rescheduleCount > 0) ...[
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.info_outline,
-                                        size: 16,
-                                        color: Colors.orange,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Rescheduled ${service.rescheduleCount} time(s)',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: Colors.orange,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // New Date Selection
-                        Text(
-                          'New Date *',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        InkWell(
-                          onTap: () => _selectDate(context),
+              // Content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Service Info Card
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.sand40,
                           borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: theme.colorScheme.outline.withOpacity(0.5),
+                          border: Border.all(color: AppTheme.beige10),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              service.serviceId.toUpperCase(),
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.brown500,
                               ),
-                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Row(
+                            const SizedBox(height: 8),
+                            Row(
                               children: [
                                 Icon(
                                   Icons.calendar_today,
-                                  color: theme.colorScheme.primary,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _selectedDate != null
-                                        ? DateFormatter.formatDate(_selectedDate!)
-                                        : 'Select Date',
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: _selectedDate != null
-                                          ? theme.colorScheme.onSurface
-                                          : theme.colorScheme.onSurface.withOpacity(0.5),
-                                    ),
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.arrow_drop_down,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.5),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        // New Time Selection
-                        Text(
-                          'New Time *',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        InkWell(
-                          onTap: () => _selectTime(context),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: theme.colorScheme.outline.withOpacity(0.5),
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  color: theme.colorScheme.primary,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _selectedTime != null
-                                        ? _formatTime(_selectedTime!)
-                                        : 'Select Time',
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: _selectedTime != null
-                                          ? theme.colorScheme.onSurface
-                                          : theme.colorScheme.onSurface.withOpacity(0.5),
-                                    ),
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.arrow_drop_down,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.5),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        // Error Message
-                        if (_errorMessage != null) ...[
-                          const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.error.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: theme.colorScheme.error.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.error_outline,
-                                  color: theme.colorScheme.error,
-                                  size: 20,
+                                  size: 16,
+                                  color: AppTheme.brown300,
                                 ),
                                 const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _errorMessage!,
-                                    style: TextStyle(
-                                      color: theme.colorScheme.error,
-                                      fontSize: 14,
-                                    ),
-                                  ),
+                                Text(
+                                  'Original: ${DateFormatter.formatDate(originalDate)} at $originalTime',
+                                  style: TextStyle(color: AppTheme.brown300),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Action Buttons
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _isSubmitting
-                              ? null
-                              : () => Navigator.of(context).pop(),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: const Text('Cancel'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: ElevatedButton(
-                          onPressed:
-                              _isSubmitting ||
-                                      _selectedDate == null ||
-                                      _selectedTime == null
-                                  ? null
-                                  : _submitReschedule,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: _isSubmitting
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor:
-                                        AlwaysStoppedAnimation<Color>(Colors.white),
+                            if (service.rescheduleCount > 0) ...[
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    size: 16,
+                                    color: Colors.orange,
                                   ),
-                                )
-                              : const Text('Confirm Reschedule'),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Rescheduled ${service.rescheduleCount} time(s)',
+                                    style: TextStyle(
+                                      color: Colors.orange,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ),
                       ),
+                      const SizedBox(height: 24),
+
+                      // New Date Selection
+                      Text(
+                        'New Date *',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.brown500,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      InkWell(
+                        onTap: () => _selectDate(context),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.sand50,
+                            border: Border.all(
+                              color: AppTheme.beige10,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                color: AppTheme.primaryDefault,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _selectedDate != null
+                                      ? DateFormatter.formatDate(_selectedDate!)
+                                      : 'Select Date',
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: _selectedDate != null
+                                        ? AppTheme.brown500
+                                        : AppTheme.brown300,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                color: AppTheme.brown400,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // New Time Selection
+                      Text(
+                        'New Time *',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.brown500,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      InkWell(
+                        onTap: () => _selectTime(context),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.sand50,
+                            border: Border.all(
+                              color: AppTheme.beige10,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.access_time,
+                                color: AppTheme.primaryDefault,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _selectedTime != null
+                                      ? _formatTime(_selectedTime!)
+                                      : 'Select Time',
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: _selectedTime != null
+                                        ? AppTheme.brown500
+                                        : AppTheme.brown300,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                color: AppTheme.brown400,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Error Message
+                      if (_errorMessage != null) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.error.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppTheme.error.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: AppTheme.error,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage!,
+                                  style: TextStyle(
+                                    color: AppTheme.error,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+
+              // Action Buttons
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _isSubmitting
+                            ? null
+                            : () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: BorderSide(color: AppTheme.beige10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          foregroundColor: AppTheme.brown500,
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed:
+                            _isSubmitting ||
+                                    _selectedDate == null ||
+                                    _selectedTime == null
+                                ? null
+                                : _submitReschedule,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryDefault,
+                          foregroundColor: AppTheme.beige4,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(AppTheme.beige4),
+                                ),
+                              )
+                            : const Text('Confirm Reschedule'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

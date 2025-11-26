@@ -4,6 +4,7 @@ import '../../api/api_client.dart';
 import '../../models/service_model.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_theme.dart';
 
 class ServiceDetailScreen extends StatefulWidget {
   final String serviceSlug;
@@ -49,17 +50,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
           if (firstPackage == null) {
             throw Exception('Invalid package data received');
           }
-
-          // Log the data types for debugging
-          print(
-            'Debug: serviceId type: ${firstPackage['serviceId']?.runtimeType}, value: ${firstPackage['serviceId']}',
-          );
-          print(
-            'Debug: price type: ${firstPackage['price']?.runtimeType}, value: ${firstPackage['price']}',
-          );
-          print(
-            'Debug: code type: ${firstPackage['code']?.runtimeType}, value: ${firstPackage['code']}',
-          );
 
           service = ServiceModel(
             id: firstPackage['serviceId']?.toString() ?? '',
@@ -130,42 +120,58 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppTheme.beigeDefault,
       appBar: AppBar(
-        title: Text(service?.title ?? 'Service Details'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        title: Text(
+          service?.title.toUpperCase() ?? 'SERVICE DETAILS',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            letterSpacing: 1.2,
+          ),
+        ),
+        backgroundColor: AppTheme.beigeDefault,
+        foregroundColor: AppTheme.brown500,
         elevation: 0,
+        centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back, color: AppTheme.brown500),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryDefault),
+              ),
+            )
           : errorMessage != null
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                  Icon(Icons.error_outline, size: 64, color: AppTheme.brown200),
                   const SizedBox(height: 16),
                   Text(
                     errorMessage!,
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 16, color: AppTheme.brown300),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _fetchServiceDetails,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryDefault,
+                      foregroundColor: AppTheme.beige4,
+                    ),
                     child: const Text('Retry'),
                   ),
                 ],
               ),
             )
           : service == null
-          ? const Center(child: Text('No service found'))
+          ? Center(child: Text('No service found', style: TextStyle(color: AppTheme.brown300)))
           : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,25 +179,23 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                   // Service Header
                   Container(
                     width: double.infinity,
-                    color: Colors.white,
-                    padding: const EdgeInsets.all(20),
+                    color: AppTheme.beigeDefault,
+                    padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           service!.title,
-                          style: const TextStyle(
-                            fontSize: 24,
+                          style: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: AppTheme.brown500,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         Text(
                           service!.description,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: AppTheme.brown300,
                             height: 1.4,
                           ),
                         ),
@@ -199,22 +203,19 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 16),
-
                   // Available Packages Section
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Text(
                       'Available Packages',
-                      style: const TextStyle(
-                        fontSize: 20,
+                      style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: AppTheme.brown500,
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   // Packages List
                   ListView.builder(
@@ -224,38 +225,39 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                     itemCount: packages.length,
                     itemBuilder: (context, index) {
                       final package = packages[index];
-                      return _buildPackageCard(package);
+                      return _buildPackageCard(package, theme);
                     },
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
     );
   }
 
-  Widget _buildPackageCard(dynamic package) {
+  Widget _buildPackageCard(dynamic package, ThemeData theme) {
     final String packageName = package['name'] ?? 'Unknown Package';
     final int price = _safeParseInt(package['price']);
     final String duration = package['duration'] ?? '';
     final List<dynamic> features = package['features'] ?? [];
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.sand40,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(color: Colors.white.withOpacity(0.5)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -269,10 +271,9 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                     children: [
                       Text(
                         packageName,
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: AppTheme.brown500,
                         ),
                       ),
                       if (duration.isNotEmpty)
@@ -280,9 +281,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                           padding: const EdgeInsets.only(top: 4),
                           child: Text(
                             duration,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.brown300,
                             ),
                           ),
                         ),
@@ -291,44 +291,42 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                    horizontal: 16,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppTheme.clay.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '₹$price',
-                    style: TextStyle(
-                      fontSize: 16,
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue[700],
+                      color: AppTheme.primaryDefault,
                     ),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             // Package Features
             if (features.isNotEmpty) ...[
-              const Text(
+              Text(
                 'Package Features:',
-                style: TextStyle(
-                  fontSize: 16,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: AppTheme.brown500,
                 ),
               ),
               const SizedBox(height: 12),
               ...features.map(
-                (feature) => _buildFeatureItem(_safeToString(feature)),
+                (feature) => _buildFeatureItem(_safeToString(feature), theme),
               ),
             ],
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
             // Book Now Button
             SizedBox(
@@ -339,37 +337,36 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Booking for $packageName'),
-                      backgroundColor: Colors.green,
+                      backgroundColor: AppTheme.primaryDefault,
                     ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[600],
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: AppTheme.primaryDefault,
+                  foregroundColor: AppTheme.beige4,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  elevation: 2,
+                  elevation: 0,
                 ),
                 child: const Text(
                   'Book This Package',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
             // Quantity Selector
             Row(
               children: [
-                const Text(
+                Text(
                   'Quantity: ',
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: AppTheme.brown500,
                   ),
                 ),
                 const Spacer(),
@@ -377,25 +374,24 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
               ],
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
             // Add to Cart Button
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: OutlinedButton(
                 onPressed: () => _addToCart(package),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[600],
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.brown500,
+                  side: const BorderSide(color: AppTheme.brown300),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  elevation: 2,
                 ),
                 child: const Text(
                   'Add to Cart',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -405,7 +401,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     );
   }
 
-  Widget _buildFeatureItem(String feature) {
+  Widget _buildFeatureItem(String feature, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -415,17 +411,16 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
             margin: const EdgeInsets.only(top: 6, right: 12),
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
-              color: Colors.green[600],
+            decoration: const BoxDecoration(
+              color: AppTheme.clay,
               shape: BoxShape.circle,
             ),
           ),
           Expanded(
             child: Text(
               feature,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppTheme.brown400,
                 height: 1.4,
               ),
             ),
@@ -440,47 +435,51 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         package['_id']?.toString() ?? package['id']?.toString() ?? '';
     final int currentQuantity = _getPackageQuantity(packageId);
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Decrease button
-        IconButton(
-          icon: const Icon(Icons.remove_circle_outline),
-          onPressed: currentQuantity > 1
-              ? () => _updatePackageQuantity(packageId, currentQuantity - 1)
-              : null,
-          color: currentQuantity > 1 ? Colors.red[600] : Colors.grey[400],
-          iconSize: 24,
-        ),
-
-        // Quantity display
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
-            borderRadius: BorderRadius.circular(8),
-            color: Colors.white,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.beige10,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Decrease button
+          IconButton(
+            icon: const Icon(Icons.remove, size: 20),
+            onPressed: currentQuantity > 1
+                ? () => _updatePackageQuantity(packageId, currentQuantity - 1)
+                : null,
+            color: currentQuantity > 1 ? AppTheme.brown500 : AppTheme.brown200,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
           ),
-          child: Text(
-            '$currentQuantity',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+
+          // Quantity display
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              '$currentQuantity',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.brown500,
+              ),
             ),
           ),
-        ),
 
-        // Increase button
-        IconButton(
-          icon: const Icon(Icons.add_circle_outline),
-          onPressed: currentQuantity < 10
-              ? () => _updatePackageQuantity(packageId, currentQuantity + 1)
-              : null,
-          color: currentQuantity < 10 ? Colors.green[600] : Colors.grey[400],
-          iconSize: 24,
-        ),
-      ],
+          // Increase button
+          IconButton(
+            icon: const Icon(Icons.add, size: 20),
+            onPressed: currentQuantity < 10
+                ? () => _updatePackageQuantity(packageId, currentQuantity + 1)
+                : null,
+            color: currentQuantity < 10 ? AppTheme.brown500 : AppTheme.brown200,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
+          ),
+        ],
+      ),
     );
   }
 
@@ -492,6 +491,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
+          backgroundColor: AppTheme.sand40,
           title: const Text('Sign in Required'),
           content: const Text(
             'Please sign in to add items to your cart. Create an account or login to continue.',
@@ -499,13 +499,17 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.brown300)),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 Navigator.pushNamed(context, '/login');
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryDefault,
+                foregroundColor: AppTheme.beige4,
+              ),
               child: const Text('Login / Register'),
             ),
           ],
@@ -536,9 +540,6 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
           ? double.tryParse(package['price'] as String) ?? 0.0
           : 0.0;
 
-      print('ServiceDetailScreen: Extracted price from package: $price');
-      print('ServiceDetailScreen: Package data: $package');
-
       if (serviceId.isNotEmpty) {
         // Get current user ID from auth provider
         final currentUser = context.read<AuthProvider>().currentUser;
@@ -557,7 +558,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Added $selectedQuantity item(s) to cart'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.primaryDefault,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -569,7 +570,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Error: Service ID not found'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -587,6 +588,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
+            backgroundColor: AppTheme.sand40,
             title: const Text('Session Expired'),
             content: const Text(
               'Your session has expired. Please login again to continue.',
@@ -594,13 +596,17 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
+                child: const Text('Cancel', style: TextStyle(color: AppTheme.brown300)),
               ),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop();
                   Navigator.pushNamed(context, '/login');
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryDefault,
+                  foregroundColor: AppTheme.beige4,
+                ),
                 child: const Text('Login'),
               ),
             ],
@@ -610,7 +616,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error adding to cart: ${e.toString().replaceAll('Exception: ', '')}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

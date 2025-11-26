@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/booking.dart';
 import '../../../utils/date_formatter.dart';
 import '../../../utils/status_utils.dart';
+import '../../../theme/app_theme.dart';
 import 'service_item_card.dart';
 
 class ServiceDetailsSection extends StatelessWidget {
@@ -18,7 +19,7 @@ class ServiceDetailsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.1),
+        color: AppTheme.sand40,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(16),
           bottomRight: Radius.circular(16),
@@ -31,8 +32,8 @@ class ServiceDetailsSection extends StatelessWidget {
           children: [
             Text(
               'Services (${booking.services.length})',
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppTheme.brown500,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/booking.dart';
 import '../../../utils/status_utils.dart';
+import '../../../theme/app_theme.dart';
 import 'rating_modal.dart';
 import 'reschedule_modal.dart';
 
@@ -28,9 +29,9 @@ class ServiceItemCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
+        color: AppTheme.sand40,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        border: Border.all(color: AppTheme.beige10),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -46,8 +47,8 @@ class ServiceItemCard extends StatelessWidget {
                     children: [
                       Text(
                         service.serviceId,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppTheme.brown500,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -55,8 +56,8 @@ class ServiceItemCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         'Quantity: ${service.quantity}',
-                        style: const TextStyle(
-                          color: Colors.grey,
+                        style: TextStyle(
+                          color: AppTheme.brown300,
                           fontSize: 14,
                         ),
                       ),
@@ -101,8 +102,8 @@ class ServiceItemCard extends StatelessWidget {
                     children: [
                       Text(
                         'Price: ₹${service.price.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppTheme.brown500,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -124,12 +125,12 @@ class ServiceItemCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Icon(Icons.person, color: Colors.blue, size: 20),
+                      const Icon(Icons.person, color: AppTheme.primaryDefault, size: 20),
                       const SizedBox(height: 4),
                       Text(
                         service.workerName ?? 'Worker Assigned',
                         style: const TextStyle(
-                          color: Colors.blue,
+                          color: AppTheme.primaryDefault,
                           fontSize: 12,
                         ),
                       ),
@@ -185,8 +186,8 @@ class ServiceItemCard extends StatelessWidget {
                     icon: const Icon(Icons.schedule, size: 16),
                     label: const Text('Reschedule'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppTheme.primaryDefault,
+                      foregroundColor: AppTheme.beige4,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
@@ -208,7 +209,7 @@ class ServiceItemCard extends StatelessWidget {
                   icon: const Icon(Icons.report, size: 16),
                   label: const Text('Report'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: AppTheme.error,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -249,8 +250,8 @@ class ServiceItemCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           '"${service.serviceReview}"',
-                          style: const TextStyle(
-                            color: Colors.grey,
+                          style: TextStyle(
+                            color: AppTheme.brown300,
                             fontSize: 14,
                             fontStyle: FontStyle.italic,
                           ),

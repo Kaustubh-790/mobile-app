@@ -1,19 +1,33 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 
 class AboutUsScreen extends StatelessWidget {
   const AboutUsScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
+      backgroundColor: AppTheme.beigeDefault,
       appBar: AppBar(
-        title: const Text('About Us'),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
-        elevation: 2,
+        title: Text(
+          'ABOUT US',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            letterSpacing: 1.2,
+          ),
+        ),
+        backgroundColor: AppTheme.beigeDefault,
+        foregroundColor: AppTheme.brown500,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.brown500),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -23,136 +37,188 @@ class AboutUsScreen extends StatelessWidget {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(60),
+                  color: AppTheme.sand50,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.beige10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.business, size: 60, color: Colors.grey),
+                child: const Icon(Icons.business, size: 60, color: AppTheme.brown400),
               ),
             ),
             const SizedBox(height: 24),
 
             // Company Name
-            const Center(
+            Center(
               child: Text(
                 '[Company Name]',
-                style: TextStyle(
-                  fontSize: 28,
+                style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: AppTheme.brown500,
                 ),
               ),
             ),
             const SizedBox(height: 8),
 
             // Company Tagline
-            const Center(
+            Center(
               child: Text(
                 '[Your innovative tagline here]',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.brown300,
                   fontStyle: FontStyle.italic,
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
 
             // About Section
-            const Text(
+            Text(
               'Our Story',
-              style: TextStyle(
-                fontSize: 22,
+              style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: AppTheme.brown500,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue[100]!),
+                color: AppTheme.sand40,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withOpacity(0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: const Text(
+              child: Text(
                 '[Insert your company story here. Describe your mission, vision, and what makes your company unique. Talk about when you were founded, your core values, and your commitment to customers.]',
-                style: TextStyle(
-                  fontSize: 16,
-                  height: 1.5,
-                  color: Colors.black87,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  height: 1.6,
+                  color: AppTheme.brown400,
                 ),
               ),
             ),
             const SizedBox(height: 32),
 
             // Mission & Vision
-            const Text(
+            Text(
               'Mission & Vision',
-              style: TextStyle(
-                fontSize: 22,
+              style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: AppTheme.brown500,
               ),
             ),
             const SizedBox(height: 16),
 
             // Mission Card
-            Card(
-              elevation: 2,
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.sand40,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withOpacity(0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.flag, color: Colors.blue[600]),
-                        const SizedBox(width: 8),
-                        const Text(
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryDefault.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.flag, color: AppTheme.primaryDefault),
+                        ),
+                        const SizedBox(width: 16),
+                        Text(
                           'Our Mission',
-                          style: TextStyle(
-                            fontSize: 18,
+                          style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
+                            color: AppTheme.brown500,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
+                    const SizedBox(height: 16),
+                    Text(
                       '[Your mission statement - what you do and why you do it]',
-                      style: TextStyle(fontSize: 16, height: 1.4),
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        height: 1.5,
+                        color: AppTheme.brown400,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 12),
 
             // Vision Card
-            Card(
-              elevation: 2,
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.sand40,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withOpacity(0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.visibility, color: Colors.green[600]),
-                        const SizedBox(width: 8),
-                        const Text(
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.clay.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.visibility, color: AppTheme.clay),
+                        ),
+                        const SizedBox(width: 16),
+                        Text(
                           'Our Vision',
-                          style: TextStyle(
-                            fontSize: 18,
+                          style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
+                            color: AppTheme.brown500,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
+                    const SizedBox(height: 16),
+                    Text(
                       '[Your vision statement - where you see the company going in the future]',
-                      style: TextStyle(fontSize: 16, height: 1.4),
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        height: 1.5,
+                        color: AppTheme.brown400,
+                      ),
                     ),
                   ],
                 ),
@@ -161,12 +227,11 @@ class AboutUsScreen extends StatelessWidget {
             const SizedBox(height: 32),
 
             // Team Section
-            const Text(
+            Text(
               'Meet Our Team',
-              style: TextStyle(
-                fontSize: 22,
+              style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: AppTheme.brown500,
               ),
             ),
             const SizedBox(height: 16),
@@ -184,65 +249,92 @@ class AboutUsScreen extends StatelessWidget {
                   '[Team Member 1]',
                   '[Position/Title]',
                   Icons.person,
+                  theme,
                 ),
                 _buildTeamMember(
                   '[Team Member 2]',
                   '[Position/Title]',
                   Icons.person,
+                  theme,
                 ),
                 _buildTeamMember(
                   '[Team Member 3]',
                   '[Position/Title]',
                   Icons.person,
+                  theme,
                 ),
                 _buildTeamMember(
                   '[Team Member 4]',
                   '[Position/Title]',
                   Icons.person,
+                  theme,
                 ),
               ],
             ),
             const SizedBox(height: 32),
 
             // Contact Information
-            const Text(
+            Text(
               'Get In Touch',
-              style: TextStyle(
-                fontSize: 22,
+              style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: AppTheme.brown500,
               ),
             ),
             const SizedBox(height: 16),
 
-            Card(
-              elevation: 2,
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.sand40,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withOpacity(0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
                     _buildContactItem(
-                      Icons.email,
+                      Icons.email_outlined,
                       'Email',
                       '[company@email.com]',
+                      theme,
                     ),
-                    const Divider(height: 24),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Divider(color: AppTheme.beige10),
+                    ),
                     _buildContactItem(
-                      Icons.phone,
+                      Icons.phone_outlined,
                       'Phone',
                       '[+1 (555) 123-4567]',
+                      theme,
                     ),
-                    const Divider(height: 24),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Divider(color: AppTheme.beige10),
+                    ),
                     _buildContactItem(
-                      Icons.location_on,
+                      Icons.location_on_outlined,
                       'Address',
                       '[123 Business St, City, State 12345]',
+                      theme,
                     ),
-                    const Divider(height: 24),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Divider(color: AppTheme.beige10),
+                    ),
                     _buildContactItem(
                       Icons.language,
                       'Website',
                       '[www.yourcompany.com]',
+                      theme,
                     ),
                   ],
                 ),
@@ -255,29 +347,50 @@ class AboutUsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTeamMember(String name, String position, IconData icon) {
-    return Card(
-      elevation: 2,
+  Widget _buildTeamMember(String name, String position, IconData icon, ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.sand40,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: Colors.grey[300],
-              child: Icon(icon, size: 30, color: Colors.grey[600]),
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: AppTheme.sand50,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppTheme.beige10),
+              ),
+              child: Icon(icon, size: 30, color: AppTheme.brown400),
             ),
             const SizedBox(height: 12),
             Text(
               name,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.brown500,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 4),
             Text(
               position,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppTheme.brown300,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -286,10 +399,17 @@ class AboutUsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildContactItem(IconData icon, String label, String value) {
+  Widget _buildContactItem(IconData icon, String label, String value, ThemeData theme) {
     return Row(
       children: [
-        Icon(icon, color: Colors.blue[600], size: 24),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryDefault.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: AppTheme.primaryDefault, size: 20),
+        ),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
@@ -297,16 +417,17 @@ class AboutUsScreen extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: AppTheme.brown500,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.brown400,
+                ),
               ),
             ],
           ),

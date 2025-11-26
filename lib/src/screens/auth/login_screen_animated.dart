@@ -4,6 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../models/user.dart';
 import '../../widgets/google_sign_in_button.dart';
 import '../../widgets/phone_auth_widget.dart';
+import '../../theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -121,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(error),
-              backgroundColor: Colors.red,
+              backgroundColor: AppTheme.error,
               duration: const Duration(seconds: 3),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -136,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Login failed: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.error,
             duration: const Duration(seconds: 3),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -155,26 +156,12 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
+    
     return Scaffold(
+      backgroundColor: AppTheme.beigeDefault,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: isDark
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF0F0F23),
-                    const Color(0xFF1A1A2E),
-                    const Color(0xFF16213E),
-                  ],
-                )
-              : LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.white, const Color(0xFFF5F7FA), Colors.white],
-                ),
+        decoration: const BoxDecoration(
+          color: AppTheme.beigeDefault,
         ),
         child: SafeArea(
           child: FadeTransition(
@@ -192,15 +179,13 @@ class _LoginScreenState extends State<LoginScreen>
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF6366F1).withOpacity(0.2)
-                              : const Color(0xFF6366F1).withOpacity(0.1),
+                          color: AppTheme.primaryDefault.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.check_circle,
                           size: 60,
-                          color: Color(0xFF6366F1),
+                          color: AppTheme.primaryDefault,
                         ),
                       ),
                     ),
@@ -211,19 +196,16 @@ class _LoginScreenState extends State<LoginScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.grey[200],
+                        color: AppTheme.sand40,
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppTheme.beige10),
                       ),
                       child: TabBar(
                         controller: _tabController,
-                        labelColor: Colors.white,
-                        unselectedLabelColor: isDark
-                            ? Colors.grey[400]
-                            : Colors.grey[600],
+                        labelColor: AppTheme.primaryDefault,
+                        unselectedLabelColor: AppTheme.brown300,
                         indicator: BoxDecoration(
-                          color: const Color(0xFF6366F1),
+                          color: AppTheme.primaryDefault.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         indicatorSize: TabBarIndicatorSize.tab,
@@ -241,8 +223,8 @@ class _LoginScreenState extends State<LoginScreen>
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        _buildEmailPasswordTab(isDark),
-                        _buildPhoneAuthTab(isDark),
+                        _buildEmailPasswordTab(),
+                        _buildPhoneAuthTab(),
                       ],
                     ),
                   ),
@@ -255,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildEmailPasswordTab(bool isDark) {
+  Widget _buildEmailPasswordTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Form(
@@ -270,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen>
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
+                color: AppTheme.brown500,
               ),
               textAlign: TextAlign.center,
             ),
@@ -279,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen>
               'Sign in to your account',
               style: TextStyle(
                 fontSize: 16,
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                color: AppTheme.brown300,
               ),
               textAlign: TextAlign.center,
             ),
@@ -290,16 +272,30 @@ class _LoginScreenState extends State<LoginScreen>
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
-              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+              style: TextStyle(color: AppTheme.brown500),
               decoration: InputDecoration(
                 labelText: 'Email',
                 hintText: 'Enter your email',
-                prefixIcon: const Icon(Icons.email_outlined),
+                prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.brown400),
                 labelStyle: TextStyle(
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  color: AppTheme.brown300,
                 ),
                 hintStyle: TextStyle(
-                  color: isDark ? Colors.grey[500] : Colors.grey[400],
+                  color: AppTheme.brown200,
+                ),
+                filled: true,
+                fillColor: AppTheme.sand50,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppTheme.beige10),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppTheme.beige10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppTheme.primaryDefault),
                 ),
               ),
               validator: (value) {
@@ -321,14 +317,15 @@ class _LoginScreenState extends State<LoginScreen>
               controller: _passwordController,
               obscureText: _obscurePassword,
               textInputAction: TextInputAction.done,
-              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+              style: TextStyle(color: AppTheme.brown500),
               decoration: InputDecoration(
                 labelText: 'Password',
                 hintText: 'Enter your password',
-                prefixIcon: const Icon(Icons.lock_outlined),
+                prefixIcon: const Icon(Icons.lock_outlined, color: AppTheme.brown400),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                    color: AppTheme.brown400,
                   ),
                   onPressed: () {
                     setState(() {
@@ -337,10 +334,24 @@ class _LoginScreenState extends State<LoginScreen>
                   },
                 ),
                 labelStyle: TextStyle(
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  color: AppTheme.brown300,
                 ),
                 hintStyle: TextStyle(
-                  color: isDark ? Colors.grey[500] : Colors.grey[400],
+                  color: AppTheme.brown200,
+                ),
+                filled: true,
+                fillColor: AppTheme.sand50,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppTheme.beige10),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppTheme.beige10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppTheme.primaryDefault),
                 ),
               ),
               validator: (value) {
@@ -367,10 +378,13 @@ class _LoginScreenState extends State<LoginScreen>
                   child: ElevatedButton(
                     onPressed: authProvider.isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryDefault,
+                      foregroundColor: AppTheme.beige4,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(30),
                       ),
+                      elevation: 4,
                     ),
                     child: authProvider.isLoading
                         ? const SizedBox(
@@ -379,7 +393,7 @@ class _LoginScreenState extends State<LoginScreen>
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                                AppTheme.beige4,
                               ),
                             ),
                           )
@@ -404,22 +418,22 @@ class _LoginScreenState extends State<LoginScreen>
                     duration: const Duration(milliseconds: 300),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50.withOpacity(0.1),
+                      color: AppTheme.error.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.shade300),
+                      border: Border.all(color: AppTheme.error.withOpacity(0.3)),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.error_outline, color: Colors.red.shade600),
+                        Icon(Icons.error_outline, color: AppTheme.error),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             authProvider.error!,
-                            style: TextStyle(color: Colors.red.shade700),
+                            style: TextStyle(color: AppTheme.error),
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.close, color: Colors.red.shade600),
+                          icon: Icon(Icons.close, color: AppTheme.error),
                           onPressed: () => authProvider.clearError(),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -440,7 +454,7 @@ class _LoginScreenState extends State<LoginScreen>
                 Text(
                   "Don't have an account? ",
                   style: TextStyle(
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    color: AppTheme.brown300,
                   ),
                 ),
                 TextButton(
@@ -450,7 +464,7 @@ class _LoginScreenState extends State<LoginScreen>
                   child: const Text(
                     'Sign Up',
                     style: TextStyle(
-                      color: Color(0xFF6366F1),
+                      color: AppTheme.primaryDefault,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -463,7 +477,7 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildPhoneAuthTab(bool isDark) {
+  Widget _buildPhoneAuthTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -471,14 +485,14 @@ class _LoginScreenState extends State<LoginScreen>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 20),
-          Icon(Icons.phone_android, size: 80, color: const Color(0xFF10B981)),
+          Icon(Icons.phone_android, size: 80, color: AppTheme.primaryDefault),
           const SizedBox(height: 24),
           Text(
             'Phone Authentication',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
+              color: AppTheme.brown500,
             ),
             textAlign: TextAlign.center,
           ),
@@ -487,7 +501,7 @@ class _LoginScreenState extends State<LoginScreen>
             'Sign in with your phone number',
             style: TextStyle(
               fontSize: 16,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              color: AppTheme.brown300,
             ),
             textAlign: TextAlign.center,
           ),
@@ -503,7 +517,7 @@ class _LoginScreenState extends State<LoginScreen>
             children: [
               Expanded(
                 child: Divider(
-                  color: isDark ? Colors.grey[700] : Colors.grey[300],
+                  color: AppTheme.beige10,
                 ),
               ),
               Padding(
@@ -511,14 +525,14 @@ class _LoginScreenState extends State<LoginScreen>
                 child: Text(
                   'OR',
                   style: TextStyle(
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    color: AppTheme.brown300,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
               Expanded(
                 child: Divider(
-                  color: isDark ? Colors.grey[700] : Colors.grey[300],
+                  color: AppTheme.beige10,
                 ),
               ),
             ],
@@ -536,7 +550,7 @@ class _LoginScreenState extends State<LoginScreen>
               Text(
                 "Don't have an account? ",
                 style: TextStyle(
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  color: AppTheme.brown300,
                 ),
               ),
               TextButton(
@@ -546,7 +560,7 @@ class _LoginScreenState extends State<LoginScreen>
                 child: const Text(
                   'Sign Up',
                   style: TextStyle(
-                    color: Color(0xFF6366F1),
+                    color: AppTheme.primaryDefault,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

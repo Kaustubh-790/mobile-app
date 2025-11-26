@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../api/api_client.dart';
+import '../../theme/app_theme.dart';
 
 class ContactUsScreen extends StatefulWidget {
   const ContactUsScreen({Key? key}) : super(key: key);
@@ -158,8 +159,6 @@ class _ContactUsScreenState extends State<ContactUsScreen>
         errorMsg = 'Network error. Please check your connection.';
       }
 
-      // Error will be shown in SnackBar
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -169,7 +168,7 @@ class _ContactUsScreenState extends State<ContactUsScreen>
               Expanded(child: Text(errorMsg)),
             ],
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -240,8 +239,21 @@ class _ContactUsScreenState extends State<ContactUsScreen>
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: AppTheme.beigeDefault,
       appBar: AppBar(
-        title: const Text('Contact Us'),
+        backgroundColor: AppTheme.beigeDefault,
+        title: Text(
+          'CONTACT US',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            letterSpacing: 1.2,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.brown500),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: SafeArea(
         child: FadeTransition(
@@ -250,17 +262,18 @@ class _ContactUsScreenState extends State<ContactUsScreen>
           children: [
             // Progress Indicator
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
                   Text(
                     'Ready to bring your ideas to life? We\'d love to hear from you.',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       height: 1.5,
+                      color: AppTheme.brown400,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   Row(
                     children: List.generate(3, (index) {
                       return Expanded(
@@ -271,8 +284,8 @@ class _ContactUsScreenState extends State<ContactUsScreen>
                           height: 4,
                           decoration: BoxDecoration(
                             color: index <= _currentStep
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.surface,
+                                ? AppTheme.primaryDefault
+                                : AppTheme.beige10,
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -282,7 +295,9 @@ class _ContactUsScreenState extends State<ContactUsScreen>
                   const SizedBox(height: 8),
                   Text(
                     'Step ${_currentStep + 1} of 3',
-                    style: theme.textTheme.bodySmall,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppTheme.brown300,
+                    ),
                   ),
                 ],
               ),
@@ -303,16 +318,17 @@ class _ContactUsScreenState extends State<ContactUsScreen>
 
             // Navigation Buttons
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
+                color: AppTheme.sand40,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
                   ),
                 ],
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
               ),
               child: SafeArea(
                 child: Row(
@@ -323,17 +339,30 @@ class _ContactUsScreenState extends State<ContactUsScreen>
                           onPressed: _previousStep,
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
+                            side: const BorderSide(color: AppTheme.brown300),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
                           ),
-                          child: const Text('Previous'),
+                          child: Text(
+                            'Previous',
+                            style: TextStyle(color: AppTheme.brown500),
+                          ),
                         ),
                       ),
-                    if (_currentStep > 0) const SizedBox(width: 12),
+                    if (_currentStep > 0) const SizedBox(width: 16),
                     Expanded(
                       flex: _currentStep > 0 ? 1 : 1,
                       child: ElevatedButton(
                         onPressed: _isSubmitting ? null : _nextStep,
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryDefault,
+                          foregroundColor: AppTheme.beige4,
                           padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 0,
                         ),
                         child: _isSubmitting
                             ? const SizedBox(
@@ -342,10 +371,13 @@ class _ContactUsScreenState extends State<ContactUsScreen>
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor:
-                                      AlwaysStoppedAnimation<Color>(Colors.white),
+                                      AlwaysStoppedAnimation<Color>(AppTheme.beige4),
                                 ),
                               )
-                            : Text(_currentStep == 2 ? 'Send Message' : 'Next'),
+                            : Text(
+                                _currentStep == 2 ? 'Send Message' : 'Next',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
                       ),
                     ),
                   ],
@@ -361,17 +393,18 @@ class _ContactUsScreenState extends State<ContactUsScreen>
 
   Widget _buildStep1(ThemeData theme) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Personal Information',
-            style: theme.textTheme.headlineMedium?.copyWith(
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
+              color: AppTheme.brown500,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           _buildTextField(
             controller: _nameController,
             label: 'Full Name *',
@@ -383,7 +416,7 @@ class _ContactUsScreenState extends State<ContactUsScreen>
               return null;
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           _buildTextField(
             controller: _emailController,
             label: 'Email Address *',
@@ -399,7 +432,7 @@ class _ContactUsScreenState extends State<ContactUsScreen>
               return null;
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           _buildTextField(
             controller: _phoneController,
             label: 'Phone Number',
@@ -413,19 +446,20 @@ class _ContactUsScreenState extends State<ContactUsScreen>
 
   Widget _buildStep2(ThemeData theme) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Service Details',
-            style: theme.textTheme.headlineMedium?.copyWith(
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
+              color: AppTheme.brown500,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           _buildServiceDropdown(theme),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           _buildTextField(
             controller: _subjectController,
             label: 'Subject *',
@@ -444,17 +478,18 @@ class _ContactUsScreenState extends State<ContactUsScreen>
 
   Widget _buildStep3(ThemeData theme) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Your Message',
-            style: theme.textTheme.headlineMedium?.copyWith(
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
+              color: AppTheme.brown500,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           _buildTextField(
             controller: _messageController,
             label: 'Message *',
@@ -467,11 +502,23 @@ class _ContactUsScreenState extends State<ContactUsScreen>
               return null;
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           // Contact Information Card
-          Card(
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.sand40,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.5)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -479,24 +526,25 @@ class _ContactUsScreenState extends State<ContactUsScreen>
                     'Contact Information',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: AppTheme.brown500,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   _buildContactItem(
-                    Icons.phone,
+                    Icons.phone_outlined,
                     'Call Us',
                     '+91 XXXXXXXXXX',
                     'Mon-Fri 9AM-6PM IST',
-                    Colors.green,
+                    AppTheme.primaryDefault,
                     theme,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   _buildContactItem(
-                    Icons.email,
+                    Icons.email_outlined,
                     'Email Us',
                     'hello@company.com',
                     'We\'ll respond within 24hrs',
-                    theme.colorScheme.primary,
+                    AppTheme.primaryDefault,
                     theme,
                   ),
                 ],
@@ -524,14 +572,15 @@ class _ContactUsScreenState extends State<ContactUsScreen>
           children: [
             Icon(
               icon,
-              size: 16,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              size: 18,
+              color: AppTheme.brown400,
             ),
             const SizedBox(width: 8),
             Text(
               label,
               style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.brown500,
               ),
             ),
           ],
@@ -543,9 +592,25 @@ class _ContactUsScreenState extends State<ContactUsScreen>
           maxLines: maxLines,
           validator: validator,
           enabled: !_isSubmitting,
-          style: theme.textTheme.bodyLarge,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: AppTheme.brown500,
+          ),
           decoration: InputDecoration(
-            contentPadding: const EdgeInsets.all(16),
+            contentPadding: const EdgeInsets.all(20),
+            filled: true,
+            fillColor: AppTheme.sand50,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide(color: AppTheme.beige10),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide(color: AppTheme.beige10),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide(color: AppTheme.primaryDefault),
+            ),
           ),
         ),
       ],
@@ -560,14 +625,15 @@ class _ContactUsScreenState extends State<ContactUsScreen>
           children: [
             Icon(
               Icons.work_outline,
-              size: 16,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              size: 18,
+              color: AppTheme.brown400,
             ),
             const SizedBox(width: 8),
             Text(
               'Service',
               style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.brown500,
               ),
             ),
           ],
@@ -575,12 +641,12 @@ class _ContactUsScreenState extends State<ContactUsScreen>
         const SizedBox(height: 8),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
+            color: AppTheme.sand50,
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: theme.colorScheme.outline.withOpacity(0.5),
+              color: AppTheme.beige10,
             ),
           ),
           child: _isLoadingServices
@@ -590,7 +656,10 @@ class _ContactUsScreenState extends State<ContactUsScreen>
                     child: SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryDefault),
+                      ),
                     ),
                   ),
                 )
@@ -600,15 +669,17 @@ class _ContactUsScreenState extends State<ContactUsScreen>
                     hint: Text(
                       'Select a service',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        color: AppTheme.brown300,
                       ),
                     ),
                     isExpanded: true,
-                    dropdownColor: theme.colorScheme.surface,
-                    style: theme.textTheme.bodyLarge,
+                    dropdownColor: AppTheme.sand50,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.brown500,
+                    ),
                     icon: Icon(
                       Icons.keyboard_arrow_down,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      color: AppTheme.brown400,
                     ),
                     items: [
                       DropdownMenuItem<String>(
@@ -616,7 +687,7 @@ class _ContactUsScreenState extends State<ContactUsScreen>
                         child: Text(
                           'Select a service',
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.5),
+                            color: AppTheme.brown300,
                           ),
                         ),
                       ),
@@ -654,8 +725,8 @@ class _ContactUsScreenState extends State<ContactUsScreen>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(icon, color: color, size: 24),
         ),
@@ -668,16 +739,21 @@ class _ContactUsScreenState extends State<ContactUsScreen>
                 title,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
+                  color: AppTheme.brown500,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 detail,
-                style: theme.textTheme.bodyMedium,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.brown400,
+                ),
               ),
               Text(
                 subDetail,
-                style: theme.textTheme.bodySmall,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppTheme.brown300,
+                ),
               ),
             ],
           ),

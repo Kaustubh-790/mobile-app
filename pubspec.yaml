@@ -21,6 +21,9 @@ dependencies:
   # Google Sign-In
   google_sign_in: ^6.1.5
 
+  # Fonts
+  google_fonts: ^6.1.0
+
   # Platform-specific dependencies
   crypto: ^3.0.3
 

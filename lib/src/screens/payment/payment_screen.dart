@@ -4,7 +4,7 @@ import '../../providers/booking_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../api/payment_service.dart';
 import '../../api/api_client.dart';
-import '../../models/booking.dart';
+import '../../theme/app_theme.dart';
 
 class PaymentScreen extends StatefulWidget {
   final String bookingId;
@@ -119,9 +119,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
       if (success && mounted) {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Payment completed successfully!'),
+          SnackBar(
+            content: const Text('Payment completed successfully!'),
             backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
 
@@ -147,20 +151,25 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F23),
+      backgroundColor: AppTheme.beigeDefault,
       appBar: AppBar(
-        title: const Text(
-          'Payment',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
+        title: Text(
+          'PAYMENT',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            letterSpacing: 1.2,
           ),
         ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.beigeDefault,
+        foregroundColor: AppTheme.brown500,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.brown500),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -169,35 +178,43 @@ class _PaymentScreenState extends State<PaymentScreen> {
           children: [
             // Payment Summary
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
+                color: AppTheme.sand40,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withOpacity(0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Payment Summary',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: AppTheme.brown500,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Amount to Pay:',
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: AppTheme.brown300,
+                        ),
                       ),
                       Text(
                         '₹${widget.amount.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: AppTheme.primaryDefault,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -206,7 +223,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Booking ID: ${widget.bookingId.substring(widget.bookingId.length - 6).toUpperCase()}',
-                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.brown300,
+                    ),
                   ),
                 ],
               ),
@@ -216,43 +235,65 @@ class _PaymentScreenState extends State<PaymentScreen> {
             // Payment Method Selection
             Text(
               'Select Payment Method',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: AppTheme.brown500,
+                fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
             ...(_paymentMethods
                 .map(
-                  (method) => RadioListTile<String>(
-                    value: method['value']!,
-                    groupValue: _selectedPaymentMethod,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedPaymentMethod = value!;
-                        _errorMessage = null;
-                      });
-                    },
-                    title: Row(
-                      children: [
-                        Icon(
-                          IconData(
-                            int.parse(method['icon']!.codePoint.toString()),
-                          ),
-                          color: Colors.white,
-                          size: 20,
+                  (method) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: _selectedPaymentMethod == method['value']
+                            ? AppTheme.primaryDefault.withOpacity(0.1)
+                            : AppTheme.sand40,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: _selectedPaymentMethod == method['value']
+                              ? AppTheme.primaryDefault
+                              : AppTheme.beige10,
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          method['label']!,
-                          style: const TextStyle(color: Colors.white),
+                      ),
+                      child: RadioListTile<String>(
+                        value: method['value']!,
+                        groupValue: _selectedPaymentMethod,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedPaymentMethod = value!;
+                            _errorMessage = null;
+                          });
+                        },
+                        title: Row(
+                          children: [
+                            Icon(
+                              IconData(
+                                int.parse(method['icon']!.codePoint.toString()),
+                              ),
+                              color: _selectedPaymentMethod == method['value']
+                                  ? AppTheme.primaryDefault
+                                  : AppTheme.brown400,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              method['label']!,
+                              style: TextStyle(
+                                color: _selectedPaymentMethod == method['value']
+                                    ? AppTheme.primaryDefault
+                                    : AppTheme.brown500,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    activeColor: const Color(0xFF8C11FF),
-                    tileColor: Colors.white.withOpacity(0.05),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                        activeColor: AppTheme.primaryDefault,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                     ),
                   ),
                 )
@@ -264,9 +305,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
             if (_selectedPaymentMethod == 'card') ...[
               Text(
                 'Card Details',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: AppTheme.brown500,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 16),
@@ -274,32 +315,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 controller: _cardNumberController,
                 decoration: InputDecoration(
                   labelText: 'Card Number',
-                  labelStyle: const TextStyle(color: Colors.grey),
+                  labelStyle: TextStyle(color: AppTheme.brown300),
                   hintText: '1234 5678 9012 3456',
-                  hintStyle: const TextStyle(color: Colors.grey),
+                  hintStyle: TextStyle(color: AppTheme.brown200),
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
+                  fillColor: AppTheme.sand50,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.2),
-                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppTheme.beige10),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.2),
-                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppTheme.beige10),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF8C11FF),
-                      width: 2,
-                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppTheme.primaryDefault),
                   ),
+                  prefixIcon: Icon(Icons.credit_card, color: AppTheme.brown400),
                 ),
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: AppTheme.brown500),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 16),
@@ -310,32 +345,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       controller: _expiryController,
                       decoration: InputDecoration(
                         labelText: 'Expiry (MM/YY)',
-                        labelStyle: const TextStyle(color: Colors.grey),
+                        labelStyle: TextStyle(color: AppTheme.brown300),
                         hintText: '12/25',
-                        hintStyle: const TextStyle(color: Colors.grey),
+                        hintStyle: TextStyle(color: AppTheme.brown200),
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.05),
+                        fillColor: AppTheme.sand50,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: Colors.white.withOpacity(0.2),
-                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: AppTheme.beige10),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: Colors.white.withOpacity(0.2),
-                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: AppTheme.beige10),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF8C11FF),
-                            width: 2,
-                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: AppTheme.primaryDefault),
                         ),
+                        prefixIcon: Icon(Icons.calendar_today, color: AppTheme.brown400),
                       ),
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppTheme.brown500),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -344,32 +373,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       controller: _cvvController,
                       decoration: InputDecoration(
                         labelText: 'CVV',
-                        labelStyle: const TextStyle(color: Colors.grey),
+                        labelStyle: TextStyle(color: AppTheme.brown300),
                         hintText: '123',
-                        hintStyle: const TextStyle(color: Colors.grey),
+                        hintStyle: TextStyle(color: AppTheme.brown200),
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.05),
+                        fillColor: AppTheme.sand50,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: Colors.white.withOpacity(0.2),
-                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: AppTheme.beige10),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: Colors.white.withOpacity(0.2),
-                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: AppTheme.beige10),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF8C11FF),
-                            width: 2,
-                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: AppTheme.primaryDefault),
                         ),
+                        prefixIcon: Icon(Icons.security, color: AppTheme.brown400),
                       ),
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppTheme.brown500),
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -380,32 +403,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 controller: _cardholderNameController,
                 decoration: InputDecoration(
                   labelText: 'Cardholder Name',
-                  labelStyle: const TextStyle(color: Colors.grey),
+                  labelStyle: TextStyle(color: AppTheme.brown300),
                   hintText: 'John Doe',
-                  hintStyle: const TextStyle(color: Colors.grey),
+                  hintStyle: TextStyle(color: AppTheme.brown200),
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
+                  fillColor: AppTheme.sand50,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.2),
-                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppTheme.beige10),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.2),
-                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppTheme.beige10),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF8C11FF),
-                      width: 2,
-                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppTheme.primaryDefault),
                   ),
+                  prefixIcon: Icon(Icons.person, color: AppTheme.brown400),
                 ),
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: AppTheme.brown500),
               ),
             ],
 
@@ -415,18 +432,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  color: AppTheme.error.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.error.withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error, color: Colors.red, size: 20),
+                    Icon(Icons.error, color: AppTheme.error, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         _errorMessage!,
-                        style: const TextStyle(color: Colors.red, fontSize: 14),
+                        style: TextStyle(color: AppTheme.error, fontSize: 14),
                       ),
                     ),
                   ],
@@ -442,12 +459,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: ElevatedButton(
                 onPressed: _isProcessing ? null : _processPayment,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8C11FF),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppTheme.primaryDefault,
+                  foregroundColor: AppTheme.beige4,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(30),
                   ),
+                  elevation: 4,
                 ),
                 child: _isProcessing
                     ? const SizedBox(
@@ -456,7 +474,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                            AppTheme.beige4,
                           ),
                         ),
                       )

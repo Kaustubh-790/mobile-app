@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class AnimatedSplashScreen extends StatefulWidget {
   final Widget child;
@@ -122,8 +123,6 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Scaffold(
       body: AnimatedBuilder(
         animation: Listenable.merge([
@@ -133,22 +132,8 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
         ]),
         builder: (context, child) {
           return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                    ? [
-                        const Color(0xFF0F0F23),
-                        const Color(0xFF1A1A2E),
-                        const Color(0xFF16213E),
-                      ]
-                    : [
-                        const Color(0xFF6366F1),
-                        const Color(0xFF818CF8),
-                        const Color(0xFFA5B4FC),
-                      ],
-              ),
+            decoration: const BoxDecoration(
+              color: AppTheme.beigeDefault,
             ),
             child: Transform.scale(
               scale: _scaleAnimation.value,
@@ -167,11 +152,11 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
                             width: 120,
                             height: 120,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppTheme.primaryDefault.withOpacity(0.1),
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: AppTheme.primaryDefault.withOpacity(0.1),
                                   blurRadius: 20,
                                   spreadRadius: 5,
                                 ),
@@ -180,7 +165,7 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
                             child: const Icon(
                               Icons.check_circle,
                               size: 80,
-                              color: Color(0xFF6366F1),
+                              color: AppTheme.primaryDefault,
                             ),
                           ),
                         ),
@@ -192,8 +177,9 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: AppTheme.brown500,
                           letterSpacing: 1.2,
+                          fontFamily: 'Julius Sans One',
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -202,8 +188,9 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
                         'Your trusted service partner',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white.withOpacity(0.9),
+                          color: AppTheme.brown300,
                           letterSpacing: 0.5,
+                          fontFamily: 'Exo 2',
                         ),
                       ),
                       const SizedBox(height: 48),
@@ -213,7 +200,7 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
                         height: 40,
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white.withOpacity(0.8),
+                            AppTheme.primaryDefault,
                           ),
                           strokeWidth: 3,
                         ),
@@ -229,4 +216,3 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
     );
   }
 }
-

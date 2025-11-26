@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/loading_widget.dart';
 import 'widgets/booking_card.dart';
 import '../search/search_screen.dart';
+import '../../theme/app_theme.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -76,9 +77,27 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     
     return Scaffold(
+      backgroundColor: AppTheme.beigeDefault,
+      appBar: AppBar(
+        backgroundColor: AppTheme.beigeDefault,
+        title: Text(
+          'MY BOOKINGS',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            letterSpacing: 1.2,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppTheme.brown500),
+            onPressed: _fetchBookings,
+            tooltip: 'Refresh',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Consumer<BookingProvider>(
         builder: (context, bookingProvider, child) {
@@ -87,61 +106,36 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
           }
 
           if (bookingProvider.error != null) {
-            return _buildErrorWidget(bookingProvider.error!, isDark);
+            return _buildErrorWidget(bookingProvider.error!);
           }
 
           if (bookingProvider.myBookings.isEmpty) {
-            return _buildEmptyState(isDark);
+            return _buildEmptyState();
           }
 
           return RefreshIndicator(
             onRefresh: _fetchBookings,
+            color: AppTheme.primaryDefault,
             child: FadeTransition(
               opacity: _fadeAnimation,
-              child: Column(
-                children: [
-                  // Header with refresh button
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'My Bookings',
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.refresh),
-                          onPressed: _fetchBookings,
-                          tooltip: 'Refresh',
-                        ),
-                      ],
+              child: ListView.builder(
+                padding: const EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 16,
+                  bottom: 100, // Extra padding for bottom nav
+                ),
+                itemCount: bookingProvider.myBookings.length,
+                itemBuilder: (context, index) {
+                  final booking = bookingProvider.myBookings[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: BookingCard(
+                      booking: booking,
+                      onRefresh: _fetchBookings,
                     ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        top: 0,
-                        bottom: 100, // Extra padding for bottom nav
-                      ),
-                      itemCount: bookingProvider.myBookings.length,
-                      itemBuilder: (context, index) {
-                        final booking = bookingProvider.myBookings[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: BookingCard(
-                            booking: booking,
-                            onRefresh: _fetchBookings,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           );
@@ -151,7 +145,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
     );
   }
 
-  Widget _buildErrorWidget(String error, bool isDark) {
+  Widget _buildErrorWidget(String error) {
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -161,24 +155,31 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
             Icon(
               Icons.error_outline,
               size: 64,
-              color: Theme.of(context).colorScheme.error,
+              color: AppTheme.error,
             ),
             const SizedBox(height: 16),
             Text(
               'Error loading bookings',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w600,
+                color: AppTheme.brown500,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               error,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppTheme.brown300,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _fetchBookings,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryDefault,
+                foregroundColor: AppTheme.beige4,
+              ),
               child: const Text('Try Again'),
             ),
           ],
@@ -187,7 +188,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
     );
   }
 
-  Widget _buildEmptyState(bool isDark) {
+  Widget _buildEmptyState() {
     final theme = Theme.of(context);
     return Center(
       child: SingleChildScrollView(
@@ -196,15 +197,16 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withOpacity(0.5),
+                color: AppTheme.sand50,
                 shape: BoxShape.circle,
+                border: Border.all(color: AppTheme.beige10),
               ),
               child: Icon(
                 Icons.bookmark_border,
                 size: 64,
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                color: AppTheme.brown200,
               ),
             ),
             const SizedBox(height: 24),
@@ -212,15 +214,18 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
               'No bookings available',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w600,
+                color: AppTheme.brown500,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Browse services and make a booking to see them here!',
-              style: theme.textTheme.bodyMedium,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppTheme.brown300,
+              ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: () {
                 Navigator.push(
@@ -233,7 +238,12 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
               icon: const Icon(Icons.explore),
               label: const Text('Browse Services'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                backgroundColor: AppTheme.primaryDefault,
+                foregroundColor: AppTheme.beige4,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
               ),
             ),
           ],

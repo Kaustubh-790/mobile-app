@@ -1,9 +1,9 @@
-// widgets/popular_services_section.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/services_provider.dart';
 import '../models/service_model.dart';
 import 'service_card.dart';
+import '../theme/app_theme.dart';
 
 class PopularServicesSection extends StatefulWidget {
   const PopularServicesSection({super.key});
@@ -24,6 +24,8 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Consumer<ServicesProvider>(
       builder: (context, servicesProvider, child) {
         return Column(
@@ -31,19 +33,25 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
           children: [
             // Section Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Popular Services',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.brown500,
+                    ),
                   ),
                   if (!servicesProvider.isLoading)
                     TextButton(
                       onPressed: () {
                         servicesProvider.refreshPopularServices();
                       },
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.primaryDefault,
+                      ),
                       child: const Text('Refresh'),
                     ),
                 ],
@@ -67,15 +75,22 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
   }
 
   Widget _buildLoadingState() {
-    return Container(
+    return SizedBox(
       height: 200,
-      child: const Center(
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Loading popular services...'),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                AppTheme.primaryDefault,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Loading popular services...',
+              style: TextStyle(color: AppTheme.brown300),
+            ),
           ],
         ),
       ),
@@ -84,39 +99,42 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
 
   Widget _buildErrorState(String error, ServicesProvider provider) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.red[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red[200]!),
+        color: AppTheme.error.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.error.withOpacity(0.3)),
       ),
       child: Column(
         children: [
-          Icon(Icons.error_outline, color: Colors.red[600], size: 48),
-          const SizedBox(height: 8),
+          Icon(Icons.error_outline, color: AppTheme.error, size: 40),
+          const SizedBox(height: 12),
           Text(
             'Failed to load services',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.red[800],
+              color: AppTheme.error,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             error.replaceAll('Exception: ', ''),
-            style: TextStyle(fontSize: 14, color: Colors.red[600]),
+            style: TextStyle(fontSize: 14, color: AppTheme.brown400),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
               provider.fetchPopularServices();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[600],
+              backgroundColor: AppTheme.error,
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
             ),
             child: const Text('Retry'),
           ),
@@ -126,17 +144,17 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
   }
 
   Widget _buildEmptyState() {
-    return Container(
+    return SizedBox(
       height: 200,
-      child: const Center(
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox_outlined, size: 48, color: Colors.grey),
-            SizedBox(height: 16),
+            Icon(Icons.inbox_outlined, size: 48, color: AppTheme.brown200),
+            const SizedBox(height: 16),
             Text(
               'No popular services available',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: TextStyle(fontSize: 16, color: AppTheme.brown300),
             ),
           ],
         ),
@@ -146,15 +164,15 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
 
   Widget _buildServicesGrid(List<ServiceModel> services) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.85, // Increased aspect ratio to give more height
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
+          childAspectRatio: 0.75, // Taller cards
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
         ),
         itemCount: services.length,
         itemBuilder: (context, index) {
@@ -175,16 +193,19 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
     // or show a bottom sheet, etc.
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => _buildServiceDetailSheet(service),
     );
   }
 
   Widget _buildServiceDetailSheet(ServiceModel service) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: AppTheme.sand40,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,33 +216,37 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AppTheme.brown200,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           // Service details
           Text(
             service.title,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.brown500,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             service.description,
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            style: TextStyle(fontSize: 16, color: AppTheme.brown300),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
 
           Row(
             children: [
               Text(
                 'Price: ₹${service.price}',
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green,
+                  color: AppTheme.primaryDefault,
                 ),
               ),
               const Spacer(),
@@ -229,19 +254,25 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
                 children: [
                   Icon(
                     Icons.star,
-                    size: 20,
-                    color: service.rating > 0 ? Colors.amber : Colors.grey,
+                    size: 24,
+                    color: service.rating > 0
+                        ? const Color(0xFFD4A373)
+                        : AppTheme.brown200,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     service.rating > 0 ? service.rating.toString() : 'New',
-                    style: const TextStyle(fontSize: 16),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.brown500,
+                    ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 32),
 
           // Action buttons
           Row(
@@ -251,10 +282,18 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
                   onPressed: () {
                     Navigator.pop(context);
                   },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.brown500,
+                    side: const BorderSide(color: AppTheme.brown300),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                   child: const Text('Close'),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
@@ -263,10 +302,19 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Booking ${service.title}...'),
-                        backgroundColor: Colors.green,
+                        backgroundColor: AppTheme.primaryDefault,
                       ),
                     );
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryDefault,
+                    foregroundColor: AppTheme.beige4,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
                   child: const Text('Book Now'),
                 ),
               ),

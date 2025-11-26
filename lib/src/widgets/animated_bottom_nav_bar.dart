@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import "../theme/app_theme.dart";
 
 class AnimatedBottomNavBar extends StatefulWidget {
   final int currentIndex;
@@ -47,29 +48,24 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return Container(
       decoration: BoxDecoration(
-        color: isDark
-            ? const Color(0xFF1A1A2E)
-            : Colors.white,
+        color: AppTheme.sand40, // Sand background for nav bar
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
           ),
         ],
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
         ),
       ),
       child: SafeArea(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: widget.items.asMap().entries.map((entry) {
@@ -84,16 +80,14 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
+                      horizontal: 12,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? (isDark
-                              ? const Color(0xFF6366F1).withOpacity(0.2)
-                              : const Color(0xFF6366F1).withOpacity(0.1))
+                          ? AppTheme.primaryDefault.withOpacity(0.1)
                           : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -112,28 +106,26 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
                               isSelected ? item.selectedIcon : item.icon,
                               key: ValueKey(isSelected),
                               color: isSelected
-                                  ? const Color(0xFF6366F1)
-                                  : (isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600]),
-                              size: 22,
+                                  ? AppTheme.primaryDefault
+                                  : AppTheme.brown300,
+                              size: 24,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Flexible(
                           child: AnimatedDefaultTextStyle(
                             duration: const Duration(milliseconds: 300),
                             style: TextStyle(
-                              fontSize: isSelected ? 11 : 10,
+                              fontSize: isSelected ? 12 : 11,
                               fontWeight: isSelected
                                   ? FontWeight.w600
                                   : FontWeight.normal,
                               color: isSelected
-                                  ? const Color(0xFF6366F1)
-                                  : (isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600]),
+                                  ? AppTheme.primaryDefault
+                                  : AppTheme.brown300,
+                              fontFamily:
+                                  'Exo 2', // Explicitly using the font family if needed, or rely on theme
                             ),
                             child: Text(
                               item.label,
@@ -166,4 +158,3 @@ class BottomNavItem {
     required this.label,
   });
 }
-

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../theme/app_theme.dart';
 
 class GoogleSignInButton extends StatelessWidget {
   const GoogleSignInButton({super.key});
@@ -22,7 +23,7 @@ class GoogleSignInButton extends StatelessWidget {
               width: 24,
               errorBuilder: (context, error, stackTrace) {
                 // Fallback icon if asset is not available
-                return const Icon(Icons.g_mobiledata, size: 24);
+                return const Icon(Icons.g_mobiledata, size: 24, color: AppTheme.brown500);
               },
             ),
             label: authProvider.isLoading
@@ -31,17 +32,21 @@ class GoogleSignInButton extends StatelessWidget {
                     width: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text(
+                : Text(
                     'Sign in with Google',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.brown500,
+                    ),
                   ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black87,
-              elevation: 2,
+              backgroundColor: AppTheme.sand40,
+              foregroundColor: AppTheme.brown500,
+              elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-                side: const BorderSide(color: Colors.grey, width: 1),
+                borderRadius: BorderRadius.circular(30),
+                side: const BorderSide(color: AppTheme.beige10, width: 1),
               ),
             ),
           ),
@@ -70,7 +75,7 @@ class GoogleSignInButton extends StatelessWidget {
               content: Text(
                 'Google sign in failed: ${authProvider.error ?? 'Unknown error'}',
               ),
-              backgroundColor: Colors.red,
+              backgroundColor: AppTheme.error,
             ),
           );
         }
@@ -81,7 +86,7 @@ class GoogleSignInButton extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Google sign in failed: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.error,
           ),
         );
       }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../models/booking.dart';
+import '../../../theme/app_theme.dart';
 
 class RatingModal extends StatefulWidget {
   final Booking booking;
@@ -33,9 +34,9 @@ class _RatingModalState extends State<RatingModal> {
   Future<void> _submitRating() async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a rating'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('Please select a rating'),
+          backgroundColor: AppTheme.error,
         ),
       );
       return;
@@ -70,7 +71,7 @@ class _RatingModalState extends State<RatingModal> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error submitting rating: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.error,
           ),
         );
       }
@@ -86,9 +87,10 @@ class _RatingModalState extends State<RatingModal> {
   @override
   Widget build(BuildContext context) {
     final service = widget.booking.services[widget.serviceIndex];
+    final theme = Theme.of(context);
 
     return Dialog(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: AppTheme.beigeDefault,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         padding: const EdgeInsets.all(24),
@@ -103,15 +105,15 @@ class _RatingModalState extends State<RatingModal> {
                 Expanded(
                   child: Text(
                     'Rate & Review Service',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: AppTheme.brown500,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close, color: Colors.grey),
+                  icon: Icon(Icons.close, color: AppTheme.brown400),
                 ),
               ],
             ),
@@ -121,17 +123,17 @@ class _RatingModalState extends State<RatingModal> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: AppTheme.sand40,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                border: Border.all(color: AppTheme.beige10),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     service.serviceId,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppTheme.brown500,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -139,7 +141,7 @@ class _RatingModalState extends State<RatingModal> {
                   const SizedBox(height: 4),
                   Text(
                     'Price: ₹${service.price.toStringAsFixed(2)}',
-                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                    style: TextStyle(color: AppTheme.brown300, fontSize: 14),
                   ),
                 ],
               ),
@@ -149,8 +151,8 @@ class _RatingModalState extends State<RatingModal> {
             // Rating
             Text(
               'Rating *',
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppTheme.brown500,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
@@ -169,7 +171,7 @@ class _RatingModalState extends State<RatingModal> {
                     child: Icon(
                       index < _rating ? Icons.star : Icons.star_border,
                       size: 40,
-                      color: index < _rating ? Colors.amber : Colors.grey,
+                      color: index < _rating ? Colors.amber : AppTheme.brown200,
                     ),
                   );
                 }),
@@ -180,8 +182,8 @@ class _RatingModalState extends State<RatingModal> {
             // Review
             Text(
               'Review (Optional)',
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppTheme.brown500,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
@@ -191,24 +193,24 @@ class _RatingModalState extends State<RatingModal> {
               controller: _reviewController,
               maxLines: 3,
               maxLength: 200,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: AppTheme.brown500),
               decoration: InputDecoration(
                 hintText: 'Share your experience...',
-                hintStyle: const TextStyle(color: Colors.grey),
+                hintStyle: TextStyle(color: AppTheme.brown300),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.05),
+                fillColor: AppTheme.sand50,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                  borderSide: BorderSide(color: AppTheme.beige10),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                  borderSide: BorderSide(color: AppTheme.beige10),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF8C11FF),
+                  borderSide: BorderSide(
+                    color: AppTheme.primaryDefault,
                     width: 2,
                   ),
                 ),
@@ -225,9 +227,9 @@ class _RatingModalState extends State<RatingModal> {
                     onPressed: _isSubmitting
                         ? null
                         : () => Navigator.of(context).pop(),
-                    child: const Text(
+                    child: Text(
                       'Cancel',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: AppTheme.brown400),
                     ),
                   ),
                 ),
@@ -238,8 +240,8 @@ class _RatingModalState extends State<RatingModal> {
                         ? null
                         : _submitRating,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8C11FF),
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppTheme.primaryDefault,
+                      foregroundColor: AppTheme.beige4,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -252,7 +254,7 @@ class _RatingModalState extends State<RatingModal> {
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                                AppTheme.beige4,
                               ),
                             ),
                           )
