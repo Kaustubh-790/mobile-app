@@ -354,32 +354,118 @@ class FirebaseAuthService {
   }
 
   /// Sign in with Firebase custom token
+  /// 
+  /// Note: There's a known issue with the Firebase Auth plugin where signInWithCustomToken
+  /// may throw a type cast error, but the user is still successfully signed in.
+  /// This method handles that by checking the auth state after the call.
   Future<Map<String, dynamic>> signInWithCustomToken(String token) async {
+    print('FirebaseAuthService: Signing in with custom token...');
+    
+    // Track if we got an exception
+    bool gotException = false;
+    Object? exceptionError;
+    
+    // Attempt to sign in with custom token
     try {
-      print('FirebaseAuthService: Signing in with custom token...');
+      await _auth.signInWithCustomToken(token);
+      print('FirebaseAuthService: signInWithCustomToken completed without exception');
+    } catch (e) {
+      // Even if there's an exception, the user might still be signed in
+      // This is a known issue with the Firebase Auth plugin
+      gotException = true;
+      exceptionError = e;
+      print('FirebaseAuthService: signInWithCustomToken threw exception: $e');
+      print('FirebaseAuthService: Exception type: ${e.runtimeType}');
+      print('FirebaseAuthService: Checking if user is actually signed in...');
+    }
+    
+    // Wait for auth state to update (using stream for reliability)
+    // This handles the case where the plugin throws but auth succeeds
+    try {
+      final currentUser = await _waitForAuthState(timeout: const Duration(seconds: 3));
       
-      final userCredential = await _auth.signInWithCustomToken(token);
-      
-      if (userCredential.user != null) {
-        final idToken = await userCredential.user!.getIdToken();
-        print('FirebaseAuthService: Sign in with custom token successful');
-        print('FirebaseAuthService: Firebase UID: ${userCredential.user!.uid}');
+      if (currentUser != null) {
+        print('FirebaseAuthService: User is signed in! UID: ${currentUser.uid}');
+        if (gotException) {
+          print('FirebaseAuthService: User signed in despite exception - this is expected');
+        }
+        
+        // Get the ID token
+        final idToken = await currentUser.getIdToken(true);
+        print('FirebaseAuthService: Successfully obtained ID token');
         
         return {
           'success': true,
           'user': {
-            'uid': userCredential.user!.uid,
-            'email': userCredential.user!.email,
-            'displayName': userCredential.user!.displayName,
+            'uid': currentUser.uid,
+            'email': currentUser.email,
+            'displayName': currentUser.displayName,
           },
           'idToken': idToken,
         };
+      } else {
+        // No user signed in - this is a real failure
+        if (gotException) {
+          return {'success': false, 'error': 'Sign in failed: $exceptionError'};
+        } else {
+          return {'success': false, 'error': 'No user returned from custom token sign in'};
+        }
+      }
+    } catch (e) {
+      print('FirebaseAuthService: Error waiting for auth state: $e');
+      
+      // Last resort: check current user directly
+      final currentUser = _auth.currentUser;
+      if (currentUser != null) {
+        print('FirebaseAuthService: Found current user, getting ID token...');
+        try {
+          final idToken = await currentUser.getIdToken(true);
+          return {
+            'success': true,
+            'user': {
+              'uid': currentUser.uid,
+              'email': currentUser.email,
+              'displayName': currentUser.displayName,
+            },
+            'idToken': idToken,
+          };
+        } catch (tokenError) {
+          print('FirebaseAuthService: Error getting ID token: $tokenError');
+        }
       }
       
-      return {'success': false, 'error': 'No user returned from custom token sign in'};
+      return {'success': false, 'error': exceptionError?.toString() ?? e.toString()};
+    }
+  }
+  
+  /// Wait for auth state to update and return the current user
+  /// This is a helper method to wait for the auth state stream to emit a user
+  Future<firebase_auth.User?> _waitForAuthState({Duration timeout = const Duration(seconds: 5)}) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser != null) {
+      return currentUser;
+    }
+    
+    try {
+      // Wait for auth state changes with timeout
+      // Use a simple approach: check current user after a short delay
+      // The auth state should update quickly after signInWithCustomToken is called
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Check multiple times to ensure we catch the auth state update
+      for (int i = 0; i < 10; i++) {
+        final user = _auth.currentUser;
+        if (user != null) {
+          return user;
+        }
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      
+      // Final check
+      return _auth.currentUser;
     } catch (e) {
-      print('FirebaseAuthService: Sign in with custom token failed: $e');
-      return {'success': false, 'error': e.toString()};
+      print('FirebaseAuthService: Error waiting for auth state: $e');
+      return _auth.currentUser;
     }
   }
 }

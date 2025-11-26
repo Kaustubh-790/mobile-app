@@ -109,6 +109,7 @@ class AuthService {
       final response = await ApiClient.dio.get(
         '/auth/verify-email/$token',
         options: Options(
+          headers: {'X-Platform': 'mobile'},
           receiveTimeout: const Duration(seconds: 30),
         ),
       );
@@ -166,22 +167,31 @@ class AuthService {
         
         // If we have firebaseToken, verification succeeded even if user parsing failed
         if (firebaseToken != null) {
+          // Check if user needs onboarding (profileCompleted will be false for new users)
+          final needsOnboarding = user != null && !user.profileCompleted;
+          
           return {
             'success': true,
             'message': response.data['message'] ?? 'Email verified successfully',
             'user': user,
             'firebaseToken': firebaseToken,
             'alreadyVerified': response.data['alreadyVerified'] ?? false,
+            'action_required': needsOnboarding ? 'ONBOARDING' : 'PROCEED',
+            'requiresProfileCompletion': needsOnboarding,
           };
         } else if (user != null) {
           // If we have user but no token, still return success
           // User can login normally
+          final needsOnboarding = !user.profileCompleted;
+          
           return {
             'success': true,
             'message': response.data['message'] ?? 'Email verified successfully',
             'user': user,
             'firebaseToken': null,
             'alreadyVerified': response.data['alreadyVerified'] ?? false,
+            'action_required': needsOnboarding ? 'ONBOARDING' : 'PROCEED',
+            'requiresProfileCompletion': needsOnboarding,
           };
         } else {
           throw Exception('Email verification response missing required data');
@@ -251,6 +261,9 @@ class AuthService {
       final response = await ApiClient.dio.post(
         '/auth/login-email',
         data: {'email': email, 'password': password},
+        options: Options(
+          headers: {'X-Platform': 'mobile'},
+        ),
       );
 
       // Check if response has user data (successful login)
@@ -260,6 +273,8 @@ class AuthService {
           'user': user,
           'message': response.data['message'] ?? 'Login successful',
           'firebaseToken': response.data['firebaseToken'],
+          'action_required': response.data['action_required'],
+          'requiresProfileCompletion': response.data['requiresProfileCompletion'] ?? !user.profileCompleted,
         };
       } else {
         throw DioException(
@@ -355,7 +370,12 @@ class AuthService {
   /// Get user profile by specific Firebase UID
   Future<User> getProfileByFirebaseUid(String firebaseUid) async {
     try {
-      final response = await ApiClient.dio.get('/users/firebase/$firebaseUid');
+      final response = await ApiClient.dio.get(
+        '/users/firebase/$firebaseUid',
+        options: Options(
+          headers: {'X-Platform': 'mobile'},
+        ),
+      );
 
       print(
         'AuthService: getProfileByFirebaseUid - Response received - Status: ${response.statusCode}',

@@ -93,11 +93,18 @@ class CartService {
   static Future<void> _ensureAuthToken() async {
     try {
       final authProvider = AuthProvider();
-      if (authProvider.isAuthenticated && authProvider.authToken != null) {
-        _apiClient.setAuthToken(authProvider.authToken!);
-        print('CartService: Auth token set for API calls');
+      if (authProvider.isAuthenticated) {
+        // Get fresh ID token from Firebase before making API call
+        final freshToken = await authProvider.getFreshIdToken();
+        if (freshToken != null) {
+          _apiClient.setAuthToken(freshToken);
+          print('CartService: Fresh auth token set for API calls');
+        } else {
+          print('CartService: Warning - No auth token available');
+          throw Exception('Authentication required. Please log in again.');
+        }
       } else {
-        print('CartService: Warning - No auth token available');
+        print('CartService: Warning - User not authenticated');
         throw Exception('Authentication required. Please log in again.');
       }
     } catch (e) {

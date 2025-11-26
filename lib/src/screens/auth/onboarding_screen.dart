@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import '../../models/user.dart';
 import '../../api/api_client.dart';
+import '../../providers/auth_provider.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final User user;
@@ -16,10 +18,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
 
   bool _isLoading = false;
   String? _errorMessage;
+
+  // Determine if user is email user (has email but no phone)
+  bool get _isEmailUser =>
+      widget.user.email != null &&
+      widget.user.email!.isNotEmpty &&
+      (widget.user.phone == null || widget.user.phone!.isEmpty);
 
   @override
   void initState() {
@@ -31,12 +40,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _nameController.text = widget.user.name ?? '';
     }
     _emailController.text = widget.user.email ?? '';
+    _phoneController.text = widget.user.phone ?? '';
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _addressController.dispose();
     super.dispose();
   }
@@ -52,17 +63,89 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
 
     try {
+      // Clean phone number: remove all non-numeric characters
+      final phoneText = _phoneController.text.trim();
+      final cleanedPhone = phoneText.replaceAll(RegExp(r'[^0-9]'), '');
+
+      // Prepare request data
+      final requestData = <String, dynamic>{
+        'name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'address': _addressController.text.trim(),
+      };
+
+      // Always include phone if it's an email user (required field)
+      // For email users, phone should always be sent if provided
+      if (_isEmailUser && cleanedPhone.isNotEmpty) {
+        requestData['phone'] = cleanedPhone;
+      } else if (!_isEmailUser && cleanedPhone.isNotEmpty) {
+        // For phone users, also send if they're updating it
+        requestData['phone'] = cleanedPhone;
+      } else if (_isEmailUser && cleanedPhone.isEmpty) {
+        // Email user must provide phone - this should be caught by validation
+        throw Exception('Phone number is required');
+      }
+
+      print('OnboardingScreen: Submitting profile data:');
+      print('OnboardingScreen: - name: ${requestData['name']}');
+      print('OnboardingScreen: - email: ${requestData['email']}');
+      print('OnboardingScreen: - phone: ${requestData['phone'] ?? 'not sent'}');
+      print('OnboardingScreen: - address: ${requestData['address']}');
+      print('OnboardingScreen: - isEmailUser: $_isEmailUser');
+
       final response = await ApiClient.dio.put(
         '/auth/profile-completion/${widget.user.firebaseUid}',
-        data: {
-          'name': _nameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'address': _addressController.text.trim(),
-        },
+        data: requestData,
         options: Options(headers: {'x-platform': 'mobile'}),
       );
 
+      print(
+        'OnboardingScreen: Profile update response status: ${response.statusCode}',
+      );
+      print('OnboardingScreen: Profile update response data: ${response.data}');
+
       if (response.statusCode == 200) {
+        // Check if phone was updated in response
+        if (response.data['user'] != null) {
+          final updatedUser = response.data['user'];
+          print(
+            'OnboardingScreen: Updated user phone: ${updatedUser['phone'] ?? 'not in response'}',
+          );
+
+          // If phone was sent but not in response, log warning
+          if (requestData.containsKey('phone') &&
+              (updatedUser['phone'] == null ||
+                  updatedUser['phone'].toString().isEmpty)) {
+            print(
+              'OnboardingScreen: WARNING - Phone was sent but not updated in backend response',
+            );
+            print(
+              'OnboardingScreen: This indicates the backend updateUserProfileCompletion endpoint needs to be updated to accept phone parameter',
+            );
+          }
+        }
+
+        // Refresh user profile from backend to get latest data
+        try {
+          final authProvider = Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          );
+          print(
+            'OnboardingScreen: Refreshing user profile after onboarding...',
+          );
+          await authProvider.refreshUserData();
+          print('OnboardingScreen: User profile refreshed successfully');
+          if (authProvider.currentUser != null) {
+            print(
+              'OnboardingScreen: Refreshed user phone: ${authProvider.currentUser!.phone ?? 'not set'}',
+            );
+          }
+        } catch (e) {
+          print('OnboardingScreen: Error refreshing user profile: $e');
+          // Continue anyway - profile update was successful
+        }
+
         // Profile updated successfully, navigate to home
         if (mounted) {
           Navigator.of(
@@ -70,9 +153,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ).pushNamedAndRemoveUntil('/home', (route) => false);
         }
       } else {
-        throw Exception('Failed to update profile');
+        throw Exception('Failed to update profile: ${response.statusCode}');
       }
     } catch (e) {
+      print('OnboardingScreen: Error updating profile: $e');
       setState(() {
         _errorMessage = 'Failed to update profile: $e';
       });
@@ -139,43 +223,74 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
               const SizedBox(height: 32),
 
-              // Phone number display (read-only)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.phone, color: Colors.grey[600]),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Phone Number',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
+              // Phone number field (editable for email users, read-only for phone users)
+              if (!_isEmailUser)
+                // Display phone as read-only for phone users
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.phone, color: Colors.grey[600]),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Phone Number',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        Text(
-                          widget.user.phone ?? 'Not available',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                          Text(
+                            widget.user.phone ?? 'Not available',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
+                )
+              else
+                // Editable phone field for email users
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone Number *',
+                    hintText: 'Enter your phone number',
+                    prefixIcon: Icon(Icons.phone),
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter your phone number';
+                    }
+                    // Basic phone validation (at least 10 digits)
+                    final phoneRegex = RegExp(r'^[0-9]{10,}$');
+                    final cleanedPhone = value.trim().replaceAll(
+                      RegExp(r'[^0-9]'),
+                      '',
+                    );
+                    if (!phoneRegex.hasMatch(cleanedPhone)) {
+                      return 'Please enter a valid phone number';
+                    }
+                    return null;
+                  },
+                  textInputAction: TextInputAction.next,
                 ),
-              ),
 
-              const SizedBox(height: 24),
+              if (!_isEmailUser) const SizedBox(height: 24),
+              if (_isEmailUser) const SizedBox(height: 20),
 
               // Name field
               TextFormField(
@@ -200,44 +315,91 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
               const SizedBox(height: 20),
 
-              // Email field
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  hintText: 'Enter your email (optional)',
-                  prefixIcon: Icon(Icons.email),
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value != null && value.trim().isNotEmpty) {
-                    // Basic email validation
-                    final emailRegex = RegExp(
-                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                    );
-                    if (!emailRegex.hasMatch(value.trim())) {
-                      return 'Please enter a valid email address';
+              // Email field (read-only for email users, optional for phone users)
+              if (_isEmailUser)
+                // Display email as read-only for email users
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.email, color: Colors.grey[600]),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Email Address',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            widget.user.email ?? 'Not available',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                )
+              else
+                // Editable email field for phone users (optional)
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email Address',
+                    hintText: 'Enter your email (optional)',
+                    prefixIcon: Icon(Icons.email),
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value != null && value.trim().isNotEmpty) {
+                      // Basic email validation
+                      final emailRegex = RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      );
+                      if (!emailRegex.hasMatch(value.trim())) {
+                        return 'Please enter a valid email address';
+                      }
                     }
-                  }
-                  return null;
-                },
-                textInputAction: TextInputAction.next,
-              ),
+                    return null;
+                  },
+                  textInputAction: TextInputAction.next,
+                ),
 
               const SizedBox(height: 20),
 
-              // Address field
+              // Address field (required)
               TextFormField(
                 controller: _addressController,
                 decoration: const InputDecoration(
-                  labelText: 'Address',
-                  hintText: 'Enter your address (optional)',
+                  labelText: 'Address *',
+                  hintText: 'Enter your address',
                   prefixIcon: Icon(Icons.location_on),
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 3,
                 textInputAction: TextInputAction.done,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your address';
+                  }
+                  if (value.trim().length < 10) {
+                    return 'Address must be at least 10 characters';
+                  }
+                  return null;
+                },
               ),
 
               const SizedBox(height: 32),

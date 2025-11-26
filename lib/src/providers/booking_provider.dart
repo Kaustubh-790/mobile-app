@@ -40,10 +40,13 @@ class BookingProvider extends ChangeNotifier {
         throw Exception('User not authenticated. Please log in again.');
       }
 
-      // Ensure auth token is set in API client
-      if (authProvider.authToken != null) {
-        print('BookingProvider: Setting auth token in API client...');
-        ApiClient().setAuthToken(authProvider.authToken!);
+      // Get fresh ID token from Firebase before making API call
+      print('BookingProvider: Getting fresh ID token from Firebase...');
+      final freshToken = await authProvider.getFreshIdToken();
+      
+      if (freshToken != null) {
+        print('BookingProvider: Setting fresh auth token in API client...');
+        ApiClient().setAuthToken(freshToken);
       } else {
         print('BookingProvider: Warning - No auth token available');
         throw Exception(
@@ -322,9 +325,9 @@ class BookingProvider extends ChangeNotifier {
           final services = List<BookingService>.from(booking.services);
 
           if (serviceIndex < services.length) {
-            services[serviceIndex] = services[serviceIndex].copyWith(
-              rescheduleCount:
-                  (services[serviceIndex].rescheduleCount ?? 0) + 1,
+            final currentService = services[serviceIndex];
+            services[serviceIndex] = currentService.copyWith(
+              rescheduleCount: currentService.rescheduleCount + 1,
               rescheduledDate: newDate,
               rescheduledTime: newTime,
               status: 'rescheduled',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../models/user.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
   final String email;
@@ -91,38 +92,85 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
     });
 
     final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.verifyEmail(token);
+    final result = await authProvider.verifyEmail(token);
 
-    if (success && mounted) {
+    if (result['success'] == true && mounted) {
       setState(() {
         _successMessage = 'Email verified successfully!';
         _isVerifying = false;
       });
 
-      // Navigate to home after a short delay
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
-      });
-    } else {
-      // Check if user is actually authenticated (verification might have succeeded despite error)
-      if (authProvider.isAuthenticated && mounted) {
-        // Verification succeeded and user is logged in, navigate to home
-        setState(() {
-          _successMessage = 'Email verified successfully!';
-          _isVerifying = false;
+      final actionRequired = result['action_required'] as String?;
+      final requiresProfileCompletion = result['requiresProfileCompletion'] as bool? ?? false;
+      final user = result['user'] as User?;
+
+      print('EmailVerificationScreen: Verification successful');
+      print('EmailVerificationScreen: actionRequired: $actionRequired');
+      print('EmailVerificationScreen: requiresProfileCompletion: $requiresProfileCompletion');
+      print('EmailVerificationScreen: user: ${user?.name}');
+      print('EmailVerificationScreen: user.profileCompleted: ${user?.profileCompleted}');
+
+      // Check if onboarding is required - check both the result flags and the user object directly
+      final needsOnboarding = actionRequired == 'ONBOARDING' || 
+                              requiresProfileCompletion || 
+                              (user != null && !user.profileCompleted);
+
+      print('EmailVerificationScreen: needsOnboarding: $needsOnboarding');
+
+      if (needsOnboarding && user != null) {
+        // Navigate to onboarding screen after a short delay
+        print('EmailVerificationScreen: Navigating to onboarding screen');
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            Navigator.pushReplacementNamed(
+              context,
+              '/onboarding',
+              arguments: user,
+            );
+          }
         });
+      } else {
+        // Navigate to home after a short delay
+        print('EmailVerificationScreen: Navigating to home screen');
         Future.delayed(const Duration(seconds: 1), () {
           if (mounted) {
             Navigator.pushReplacementNamed(context, '/home');
           }
         });
+      }
+    } else {
+      // Check if user is actually authenticated (verification might have succeeded despite error)
+      if (authProvider.isAuthenticated && mounted) {
+        // Verification succeeded and user is logged in
+        final user = authProvider.currentUser;
+        final needsOnboarding = user != null && !user.profileCompleted;
+        
+        setState(() {
+          _successMessage = 'Email verified successfully!';
+          _isVerifying = false;
+        });
+        
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            if (needsOnboarding) {
+              // Navigate to onboarding (user is guaranteed to not be null when isAuthenticated is true)
+              Navigator.pushReplacementNamed(
+                context,
+                '/onboarding',
+                arguments: user,
+              );
+            } else {
+              // Navigate to home
+              Navigator.pushReplacementNamed(context, '/home');
+            }
+          }
+        });
       } else {
         // Check if error suggests verification succeeded but login failed
-        final errorMsg = authProvider.error ?? 'Email verification failed';
-        if (errorMsg.contains('Verification completed') || 
-            errorMsg.contains('try logging in')) {
+        final error = result['error'] as String? ?? authProvider.error ?? 'Email verification failed';
+        if (error.contains('Verification completed') || 
+            error.contains('try logging in') ||
+            error.contains('Please login')) {
           // Verification succeeded, but auto-login failed - suggest manual login
           setState(() {
             _successMessage = 'Email verified! Please sign in to continue.';
@@ -135,7 +183,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
           });
         } else {
           setState(() {
-            _error = errorMsg;
+            _error = error;
             _isVerifying = false;
           });
         }

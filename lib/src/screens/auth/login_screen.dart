@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../api/auth_service.dart';
+import '../../models/user.dart';
 import '../../widgets/google_sign_in_button.dart';
 import '../../widgets/phone_auth_widget.dart';
 
@@ -85,13 +85,49 @@ class _LoginScreenState extends State<LoginScreen>
     final authProvider = context.read<AuthProvider>();
 
     try {
-      final success = await authProvider.login(
+      final result = await authProvider.login(
         _emailController.text.trim(),
         _passwordController.text,
       );
 
-      if (success && mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+      if (result['success'] == true && mounted) {
+        final actionRequired = result['action_required'] as String?;
+        final requiresProfileCompletion = result['requiresProfileCompletion'] as bool? ?? false;
+        final user = result['user'] as User?;
+
+        // Check if onboarding is required
+        if (actionRequired == 'ONBOARDING' || requiresProfileCompletion) {
+          // Navigate to onboarding screen
+          if (user != null) {
+            Navigator.pushReplacementNamed(
+              context,
+              '/onboarding',
+              arguments: user,
+            );
+          } else {
+            // If user is not available, go to home (shouldn't happen)
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+        } else {
+          // Login successful, no onboarding needed
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      } else {
+        // Login failed
+        final error = result['error'] as String? ?? 'Login failed';
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

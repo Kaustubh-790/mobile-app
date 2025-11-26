@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../api/auth_service.dart';
+import '../../models/user.dart';
 import '../../widgets/google_sign_in_button.dart';
 import '../../widgets/phone_auth_widget.dart';
 
@@ -19,11 +19,11 @@ class _LoginScreenState extends State<LoginScreen>
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   late TabController _tabController;
-  
+
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late AnimationController _logoController;
-  
+
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _logoScale;
@@ -32,16 +32,17 @@ class _LoginScreenState extends State<LoginScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    
+
     // Fade animation
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
-    );
-    
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeIn));
+
     // Slide animation
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 600),
@@ -51,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen>
       begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
-    
+
     // Logo animation
     _logoController = AnimationController(
       duration: const Duration(milliseconds: 1000),
@@ -60,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen>
     _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
     );
-    
+
     _fadeController.forward();
     _slideController.forward();
     _logoController.forward();
@@ -85,13 +86,50 @@ class _LoginScreenState extends State<LoginScreen>
     final authProvider = context.read<AuthProvider>();
 
     try {
-      final success = await authProvider.login(
+      final result = await authProvider.login(
         _emailController.text.trim(),
         _passwordController.text,
       );
 
-      if (success && mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+      if (result['success'] == true && mounted) {
+        final actionRequired = result['action_required'] as String?;
+        final requiresProfileCompletion =
+            result['requiresProfileCompletion'] as bool? ?? false;
+        final user = result['user'] as User?;
+
+        // Check if onboarding is required
+        if (actionRequired == 'ONBOARDING' || requiresProfileCompletion) {
+          // Navigate to onboarding screen
+          if (user != null) {
+            Navigator.pushReplacementNamed(
+              context,
+              '/onboarding',
+              arguments: user,
+            );
+          } else {
+            // If user is not available, go to home (shouldn't happen)
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+        } else {
+          // Login successful, no onboarding needed
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      } else {
+        // Login failed
+        final error = result['error'] as String? ?? 'Login failed';
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -118,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -135,11 +173,7 @@ class _LoginScreenState extends State<LoginScreen>
               : LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white,
-                    const Color(0xFFF5F7FA),
-                    Colors.white,
-                  ],
+                  colors: [Colors.white, const Color(0xFFF5F7FA), Colors.white],
                 ),
         ),
         child: SafeArea(
@@ -171,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
                   ),
-                  
+
                   // Tab Bar
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -272,8 +306,9 @@ class _LoginScreenState extends State<LoginScreen>
                 if (value == null || value.isEmpty) {
                   return 'Please enter your email';
                 }
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                    .hasMatch(value)) {
+                if (!RegExp(
+                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                ).hasMatch(value)) {
                   return 'Please enter a valid email';
                 }
                 return null;
@@ -436,11 +471,7 @@ class _LoginScreenState extends State<LoginScreen>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 20),
-          Icon(
-            Icons.phone_android,
-            size: 80,
-            color: const Color(0xFF10B981),
-          ),
+          Icon(Icons.phone_android, size: 80, color: const Color(0xFF10B981)),
           const SizedBox(height: 24),
           Text(
             'Phone Authentication',
@@ -463,10 +494,7 @@ class _LoginScreenState extends State<LoginScreen>
           const SizedBox(height: 48),
 
           // Phone Authentication Widget
-          PhoneAuthWidget(
-            isSignUp: false,
-            onSuccess: _handlePhoneAuthSuccess,
-          ),
+          PhoneAuthWidget(isSignUp: false, onSuccess: _handlePhoneAuthSuccess),
 
           const SizedBox(height: 32),
 
@@ -530,4 +558,3 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 }
-

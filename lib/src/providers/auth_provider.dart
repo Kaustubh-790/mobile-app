@@ -85,7 +85,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Login user with email and password
-  Future<bool> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       _setLoading(true);
       _clearError();
@@ -97,27 +97,104 @@ class AuthProvider extends ChangeNotifier {
 
       final user = result['user'] as User;
       final firebaseToken = result['firebaseToken'] as String?;
+      final actionRequired = result['action_required'] as String?;
+      final requiresProfileCompletion = result['requiresProfileCompletion'] as bool? ?? false;
 
-      // Save user and token
+      // Save user
       _currentUser = user;
 
-      // Use the firebaseToken from backend response
+      // Handle Firebase custom token: Sign in to Firebase and get ID token
       if (firebaseToken != null) {
-        _authToken = firebaseToken;
-        await _saveTokenToStorage(_authToken!);
-        ApiClient().setAuthToken(_authToken!);
+        try {
+          // Sign in to Firebase with custom token
+          final signInResult = await _firebaseAuth.signInWithCustomToken(firebaseToken);
+          if (signInResult['success'] == true) {
+            // Get the ID token from Firebase (this is what the backend expects)
+            final idToken = signInResult['idToken'] as String?;
+            if (idToken != null) {
+              _authToken = idToken;
+              await _saveTokenToStorage(_authToken!);
+              ApiClient().setAuthToken(_authToken!);
+              print('AuthProvider: Successfully signed in with Firebase and got ID token');
+            } else {
+              // Fallback: Get ID token from current Firebase user
+              final idTokenFromFirebase = await _firebaseAuth.getIdToken();
+              if (idTokenFromFirebase != null) {
+                _authToken = idTokenFromFirebase;
+                await _saveTokenToStorage(_authToken!);
+                ApiClient().setAuthToken(_authToken!);
+              } else {
+                throw Exception('Failed to get ID token from Firebase');
+              }
+            }
+          } else {
+            // Even if signInWithCustomToken reports failure, check if user is actually signed in
+            // This handles the case where the Firebase plugin throws but auth succeeds
+            print('AuthProvider: signInWithCustomToken reported failure, checking auth state...');
+            await Future.delayed(const Duration(milliseconds: 500));
+            
+            final idTokenFromFirebase = await _firebaseAuth.getIdToken();
+            if (idTokenFromFirebase != null) {
+              print('AuthProvider: User is actually signed in, using ID token');
+              _authToken = idTokenFromFirebase;
+              await _saveTokenToStorage(_authToken!);
+              ApiClient().setAuthToken(_authToken!);
+            } else {
+              throw Exception('Failed to sign in with Firebase custom token');
+            }
+          }
+        } catch (e) {
+          print('AuthProvider: Error signing in with Firebase custom token: $e');
+          
+          // Last resort: Check if user is actually signed in despite the error
+          // This is a workaround for a known Firebase Auth plugin issue
+          print('AuthProvider: Checking if user is signed in despite error...');
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          try {
+            final idTokenFromFirebase = await _firebaseAuth.getIdToken();
+            if (idTokenFromFirebase != null) {
+              print('AuthProvider: User is signed in! Using ID token despite error');
+              _authToken = idTokenFromFirebase;
+              await _saveTokenToStorage(_authToken!);
+              ApiClient().setAuthToken(_authToken!);
+            } else {
+              throw Exception('Failed to authenticate with Firebase: $e');
+            }
+          } catch (fallbackError) {
+            print('AuthProvider: Fallback also failed: $fallbackError');
+            throw Exception('Failed to authenticate with Firebase: $e');
+          }
+        }
       } else if (user.firebaseUid != null) {
-        // Fallback to firebaseUid if no token provided
-        _authToken = user.firebaseUid;
-        await _saveTokenToStorage(_authToken!);
-        ApiClient().setAuthToken(_authToken!);
+        // If no custom token but we have Firebase UID, try to get ID token directly
+        final idToken = await _firebaseAuth.getIdToken();
+        if (idToken != null) {
+          _authToken = idToken;
+          await _saveTokenToStorage(_authToken!);
+          ApiClient().setAuthToken(_authToken!);
+        } else {
+          throw Exception('No Firebase authentication available');
+        }
+      } else {
+        throw Exception('No authentication token available');
       }
 
       notifyListeners();
-      return true;
+
+      // Return result with onboarding info
+      return {
+        'success': true,
+        'user': user,
+        'action_required': actionRequired,
+        'requiresProfileCompletion': requiresProfileCompletion,
+      };
     } catch (e) {
       _setError('Login failed: $e');
-      return false;
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
     } finally {
       _setLoading(false);
     }
@@ -385,7 +462,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Verify email with token
-  Future<bool> verifyEmail(String token) async {
+  Future<Map<String, dynamic>> verifyEmail(String token) async {
     try {
       _setLoading(true);
       _clearError();
@@ -395,6 +472,7 @@ class AuthProvider extends ChangeNotifier {
       if (result['success'] == true) {
         final user = result['user'] as User?;
         final firebaseToken = result['firebaseToken'] as String?;
+        final actionRequired = result['action_required'] as String?;
 
         // If we have firebaseToken, verification succeeded - proceed with login
         if (firebaseToken != null) {
@@ -402,22 +480,39 @@ class AuthProvider extends ChangeNotifier {
           try {
             final signInResult = await _firebaseAuth.signInWithCustomToken(firebaseToken);
             if (signInResult['success'] == true) {
-              print('Successfully signed in with Firebase custom token');
+              print('AuthProvider: Successfully signed in with Firebase custom token');
               // Use the ID token from Firebase for API calls
               if (signInResult['idToken'] != null) {
                 _authToken = signInResult['idToken'] as String;
               } else {
-                // Fallback to custom token
-                _authToken = firebaseToken;
+                // Fallback: Get ID token from current Firebase user
+                final idTokenFromFirebase = await _firebaseAuth.getIdToken();
+                if (idTokenFromFirebase != null) {
+                  _authToken = idTokenFromFirebase;
+                } else {
+                  // Last resort: Use custom token
+                  _authToken = firebaseToken;
+                }
               }
             } else {
-              // Use custom token as fallback
-              _authToken = firebaseToken;
+              // Fallback: Get ID token from current Firebase user
+              final idTokenFromFirebase = await _firebaseAuth.getIdToken();
+              if (idTokenFromFirebase != null) {
+                _authToken = idTokenFromFirebase;
+              } else {
+                _authToken = firebaseToken;
+              }
             }
           } catch (e) {
-            print('Error signing in with Firebase token: $e');
-            // Use custom token as fallback - backend will accept it
-            _authToken = firebaseToken;
+            print('AuthProvider: Error signing in with Firebase token: $e');
+            // Check if user is actually signed in despite error
+            await Future.delayed(const Duration(milliseconds: 500));
+            final idTokenFromFirebase = await _firebaseAuth.getIdToken();
+            if (idTokenFromFirebase != null) {
+              _authToken = idTokenFromFirebase;
+            } else {
+              _authToken = firebaseToken;
+            }
           }
 
           // If user object is null, try to fetch it from backend using Firebase UID
@@ -426,39 +521,65 @@ class AuthProvider extends ChangeNotifier {
               // Get Firebase UID from the signed-in user
               final firebaseUser = _firebaseAuth.currentFirebaseUser;
               if (firebaseUser != null) {
+                print('AuthProvider: Fetching user profile from backend after verification...');
                 final fetchedUser = await AuthService().getProfileByFirebaseUid(firebaseUser.uid);
                 _currentUser = fetchedUser;
+                print('AuthProvider: Fetched user - profileCompleted: ${fetchedUser.profileCompleted}');
               }
             } catch (e) {
-              print('Error fetching user profile: $e');
+              print('AuthProvider: Error fetching user profile: $e');
               // Continue without user - token is set, user can proceed
             }
           } else {
             _currentUser = user;
+            print('AuthProvider: User from verification - profileCompleted: ${user.profileCompleted}');
           }
 
           // Save token and update API client
-          await _saveTokenToStorage(_authToken!);
-          ApiClient().setAuthToken(_authToken!);
+          if (_authToken != null) {
+            await _saveTokenToStorage(_authToken!);
+            ApiClient().setAuthToken(_authToken!);
+          }
 
           notifyListeners();
-          return true;
+
+          // Determine final onboarding status from the actual user object
+          final finalUser = _currentUser ?? user;
+          final finalNeedsOnboarding = finalUser != null && !finalUser.profileCompleted;
+          final finalActionRequired = finalNeedsOnboarding ? 'ONBOARDING' : (actionRequired ?? 'PROCEED');
+          
+          print('AuthProvider: Final onboarding check - needsOnboarding: $finalNeedsOnboarding, actionRequired: $finalActionRequired');
+
+          // Return result with onboarding info
+          return {
+            'success': true,
+            'user': finalUser,
+            'action_required': finalActionRequired,
+            'requiresProfileCompletion': finalNeedsOnboarding,
+          };
         } else if (user != null) {
           // User object exists but no firebaseToken - email verified but need to login
           _currentUser = user;
           notifyListeners();
-          _setError('Email verified. Please login to continue.');
-          return false;
+          return {
+            'success': false,
+            'error': 'Email verified. Please login to continue.',
+            'user': user,
+          };
         } else if (result['alreadyVerified'] == true) {
           // Email already verified, but no token returned
           // User should login normally
-          _setError('Email already verified. Please login to continue.');
-          return false;
+          return {
+            'success': false,
+            'error': 'Email already verified. Please login to continue.',
+          };
         }
       }
 
-      _setError('Email verification failed');
-      return false;
+      return {
+        'success': false,
+        'error': 'Email verification failed',
+      };
     } catch (e) {
       // Check if error message suggests verification succeeded
       final errorStr = e.toString();
@@ -466,11 +587,16 @@ class AuthProvider extends ChangeNotifier {
           errorStr.contains('try logging in')) {
         // Verification likely succeeded, but we can't complete auto-login
         // User should try logging in manually
-        _setError('Verification completed. Please login to continue.');
+        return {
+          'success': false,
+          'error': 'Verification completed. Please login to continue.',
+        };
       } else {
-        _setError('Email verification failed: $e');
+        return {
+          'success': false,
+          'error': 'Email verification failed: $e',
+        };
       }
-      return false;
     } finally {
       _setLoading(false);
     }
@@ -585,6 +711,26 @@ class AuthProvider extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  /// Get fresh ID token from Firebase (refreshes if needed)
+  Future<String?> getFreshIdToken() async {
+    try {
+      if (_firebaseAuth.isSignedIn) {
+        // Force refresh to get a new token
+        final idToken = await _firebaseAuth.getIdToken();
+        if (idToken != null) {
+          _authToken = idToken;
+          await _saveTokenToStorage(idToken);
+          ApiClient().setAuthToken(idToken);
+          return idToken;
+        }
+      }
+      return _authToken;
+    } catch (e) {
+      print('AuthProvider: Error getting fresh ID token: $e');
+      return _authToken;
+    }
   }
 
   /// Debug method for testing authentication flow
