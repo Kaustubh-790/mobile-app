@@ -10,7 +10,7 @@ class AppTheme {
   static const Color beige200 = Color(0xFFE7D8C4);
   static const Color beige210 = Color(0xFFE7D8C8);
   static const Color beige250 = Color(0xFFC09C81);
-  static const Color beigeDefault = Color(0xFFE7D8C8); // Main background
+  static const Color beigeDefault = Color(0xFFE7D8C8); 
   static const Color beige400 = Color(0xFFBE9C7E);
   static const Color beige450 = Color(0xFFB58B5E);
   static const Color beige500 = Color(0xFFC99B78);
@@ -29,13 +29,13 @@ class AppTheme {
   static const Color brown300 = Color(0xFF8B766C);
   static const Color brown350 = Color(0xFF4A392C);
   static const Color brown400 = Color(0xFF5F4B41);
-  static const Color brown500 = Color(0xFF2E1F1B); // Main text
+  static const Color brown500 = Color(0xFF2E1F1B); 
   static const Color brown600 = Color(0xFF2E1E18);
   static const Color brown700 = Color(0xFF1E120D);
 
   // Primary Colors
   static const Color primaryLight = Color(0xFFD9C9B9);
-  static const Color primaryDefault = Color(0xFF2E1F1B); // Dark brown CTA
+  static const Color primaryDefault = Color(0xFF2E1F1B); 
   static const Color primaryDark = Color(0xFF2B1A14);
 
   // Accents

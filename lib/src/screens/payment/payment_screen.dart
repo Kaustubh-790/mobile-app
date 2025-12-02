@@ -152,15 +152,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       backgroundColor: AppTheme.beigeDefault,
       appBar: AppBar(
         title: Text(
           'PAYMENT',
-          style: theme.textTheme.headlineMedium?.copyWith(
-            letterSpacing: 1.2,
-          ),
+          style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: 1.2),
         ),
         backgroundColor: AppTheme.beigeDefault,
         foregroundColor: AppTheme.brown500,
@@ -268,15 +266,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         },
                         title: Row(
                           children: [
+                            // Icon(
+                            //   IconData(
+                            //     int.parse(method['icon']!.codePoint.toString()),
+                            //   ),
+                            //   color: _selectedPaymentMethod == method['value']
+                            //       ? AppTheme.primaryDefault
+                            //       : AppTheme.brown400,
+                            //   size: 24,
+                            // ),
                             Icon(
-                              IconData(
-                                int.parse(method['icon']!.codePoint.toString()),
-                              ),
+                              method['icon'] as IconData,
                               color: _selectedPaymentMethod == method['value']
                                   ? AppTheme.primaryDefault
                                   : AppTheme.brown400,
                               size: 24,
                             ),
+
                             const SizedBox(width: 12),
                             Text(
                               method['label']!,
@@ -360,9 +366,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(color: AppTheme.primaryDefault),
+                          borderSide: BorderSide(
+                            color: AppTheme.primaryDefault,
+                          ),
                         ),
-                        prefixIcon: Icon(Icons.calendar_today, color: AppTheme.brown400),
+                        prefixIcon: Icon(
+                          Icons.calendar_today,
+                          color: AppTheme.brown400,
+                        ),
                       ),
                       style: TextStyle(color: AppTheme.brown500),
                     ),
@@ -388,9 +399,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(color: AppTheme.primaryDefault),
+                          borderSide: BorderSide(
+                            color: AppTheme.primaryDefault,
+                          ),
                         ),
-                        prefixIcon: Icon(Icons.security, color: AppTheme.brown400),
+                        prefixIcon: Icon(
+                          Icons.security,
+                          color: AppTheme.brown400,
+                        ),
                       ),
                       style: TextStyle(color: AppTheme.brown500),
                       keyboardType: TextInputType.number,
